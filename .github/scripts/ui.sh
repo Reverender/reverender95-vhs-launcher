@@ -25,6 +25,9 @@ timeout 20 adb shell cmd notification post -S messaging --conversation Band_chat
 adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N4-chats.png"
 adb logcat -d | grep "r95 *: swipe" | tail -5
+# swipe the first chat away
+adb shell input swipe $((W*20/100)) $((H*155/1000)) $((W*90/100)) $((H*155/1000)) 250; sleep 2
+timeout 20 adb exec-out screencap -p > "$OUT/N4b-chat-dismissed.png"
 adb shell input tap $((W/3)) $((H*25/100)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
 # menu switch effect: back to the list, then back to the home screen, caught mid-switch
