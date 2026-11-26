@@ -137,7 +137,7 @@ timeout 25 adb exec-out screencap -p > "$OUT/13b-vhs-eq-drag.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 1.5
 # setup: THEME twice
 timeout 25 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 3
-timeout 25 adb shell input tap $((W/2)) $((H*97/100)); sleep 1.5
+timeout 25 adb shell input tap $((W/2)) $((H-22)); sleep 1.5
 timeout 25 adb exec-out screencap -p > "$OUT/14a-setup.png"
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 1
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 2
@@ -147,12 +147,12 @@ timeout 25 adb exec-out screencap -p > "$OUT/14b-vhs-theme.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 2
 # empty titles: no title bars on the home screen
 timeout 20 adb shell am force-stop $VPKG
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "|" >/dev/null; sleep 5
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "~" >/dev/null; sleep 5
 timeout 25 adb exec-out screencap -p > "$OUT/T0-no-titles.png"
 timeout 20 adb shell am force-stop $VPKG
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "MY VCR|" >/dev/null; sleep 5
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "MY_VCR~" >/dev/null; sleep 5
 timeout 25 adb exec-out screencap -p > "$OUT/T1-one-title.png"
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "VHS/VCR MENU|REVERENDER 95" >/dev/null; sleep 2
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "VHS/VCR_MENU~REVERENDER_95" >/dev/null; sleep 2
 # vaporwave colours: each multicolour background, the last with PASTEL MIX text
 for gi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG
