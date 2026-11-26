@@ -879,7 +879,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                                 val ddx = end.x - down.position.x; val ddy = end.y - down.position.y
                                 if (!c.pressed) break
                             }
-                            if (used) return@awaitEachGesture
+                            if (used) { android.util.Log.i("r95", "swipe: used by a control"); return@awaitEachGesture }
                             val dx = end.x - down.position.x; val dy = end.y - down.position.y
                             val dir = when {
                                 kotlin.math.abs(dy) > min && kotlin.math.abs(dy) > kotlin.math.abs(dx) * 1.4f -> if (dy < 0) "up" else "down"
@@ -896,6 +896,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                             if (dir == "down") { Haptics.tick(); Launcher.openNotifications(ctx); return@awaitEachGesture }
                             if (screen != Screen.MAIN) return@awaitEachGesture
                             val target = OsPrefs.vhsSwipe[dir].orEmpty()
+                            android.util.Log.i("r95", "swipe: $dir -> $target")
                             when {
                                 target == "vhs:setup" -> screen = Screen.SETUP
                                 target == "vhs:chat" && com.reverender.r95.BuildConfig.NOTIF -> { Haptics.tick(); screen = Screen.CHAT }

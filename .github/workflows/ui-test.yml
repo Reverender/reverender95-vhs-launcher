@@ -4,6 +4,11 @@ name: UI check
 # memory use, frame timing, low-memory kills and crashes. Run it from the Actions tab.
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "notif = only the VHS+ part"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -44,7 +49,7 @@ jobs:
           disk-size: 2048M
           ram-size: 2048M
           heap-size: 128M
-          script: timeout 30m bash .github/scripts/ui.sh 2>&1 | tee /tmp/ui-report.txt; mkdir -p ui; cp /tmp/ui-report.txt ui/report.txt
+          script: ONLY="${{ inputs.only }}" timeout 30m bash .github/scripts/ui.sh 2>&1 | tee /tmp/ui-report.txt; mkdir -p ui; cp /tmp/ui-report.txt ui/report.txt
       - name: CRT curve on Android 14 (GPU shader)
         uses: reactivecircus/android-emulator-runner@v2
         with:

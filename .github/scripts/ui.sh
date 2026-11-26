@@ -24,10 +24,12 @@ timeout 20 adb shell cmd notification post -S messaging --conversation Mama --me
 timeout 20 adb shell cmd notification post -S messaging --conversation Band_chat --message Kim:Repetitie_om_acht --message Joe:Ik_neem_de_synth_mee chat2 y >/dev/null; sleep 2
 adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N4-chats.png"
+adb logcat -d | grep "r95 *: swipe" | tail -5
 adb shell input tap $((W/3)) $((H*25/100)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
+[ "$ONLY" = notif ] && exit 0
 # ---- the VHS-only APK (R8-stripped release)
 VHS_WALL_Y=${VHS_WALL_Y:-433}; VHS_DECKSW_Y=${VHS_DECKSW_Y:-108}
 VPKG=com.reverender.r95.vhs
