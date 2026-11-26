@@ -191,11 +191,16 @@ object RetroAlerts {
 class RetroNotificationService : NotificationListenerService() {
     override fun onCreate() { super.onCreate(); OsPrefs.init(this) }
 
-    override fun onListenerConnected() { com.reverender.r95.ui.vhs.VhsNotifs.refresh(this) }
+    override fun onListenerConnected() {
+        com.reverender.r95.ui.vhs.VhsNotifs.refresh(this)
+        // WhatsApp chats already waiting (and their reply buttons, which don't survive a restart)
+        runCatching { activeNotifications }.getOrNull()?.forEach { com.reverender.r95.ui.vhs.VhsChats.onPosted(this, it) }
+    }
     override fun onListenerDisconnected() { com.reverender.r95.ui.vhs.VhsNotifs.disconnected() }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         com.reverender.r95.ui.vhs.VhsNotifs.refresh(this, sbn)
+        com.reverender.r95.ui.vhs.VhsChats.onPosted(this, sbn)
         if (sbn.packageName == packageName || sbn.isOngoing || !sbn.isClearable) return
         val n = sbn.notification ?: return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return

@@ -317,7 +317,7 @@ internal fun VhsLetterPad(onChar: (Char) -> Unit) {
 }
 
 /** A search field the phone keyboard can type into (swipe up); [enter] runs on the keyboard's enter key. */
-internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val enter: () -> Unit)
+internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val enter: () -> Unit, val raw: Boolean = false)
 internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime.mutableStateOf<VhsKb?>(null) }
 
 /** While composed, swipe up types into this field. */
@@ -325,7 +325,7 @@ internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime
 internal fun RegisterKb(kb: VhsKb) {
     val holder = LocalKbHolder.current
     val cur by androidx.compose.runtime.rememberUpdatedState(kb)
-    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, { cur.enter() }) }
+    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, { cur.enter() }, kb.raw) }
     androidx.compose.runtime.DisposableEffect(proxy) {
         holder.value = proxy
         onDispose { if (holder.value === proxy) holder.value = null }
@@ -710,7 +710,7 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
 
 // ---------------------------------------------------------------- shell
 
-private enum class Screen { MAIN, SETUP, CHOOSE, VIDEO, PLAYLIST, EQ }
+private enum class Screen { MAIN, SETUP, CHOOSE, VIDEO, PLAYLIST, EQ, CHAT }
 
 @Composable
 fun VhsShell(onShutDown: () -> Unit) {
@@ -727,7 +727,7 @@ fun VhsShell(onShutDown: () -> Unit) {
     // back on the main screen does nothing (as a home screen it would only restart the launcher); an open
     // phone keyboard still closes itself first. Other screens go back to the menu.
     LaunchedEffect(screen) { VhsHint.poke() }
-    BackHandler(enabled = screen != Screen.MAIN) { screen = if (screen == Screen.CHOOSE) Screen.SETUP else Screen.MAIN }
+    BackHandler(enabled = screen != Screen.MAIN && !(screen == Screen.CHAT && VhsChats.open != null)) { screen = if (screen == Screen.CHOOSE) Screen.SETUP else Screen.MAIN }
 
     // ---- full screen: the status bar is hidden while the VHS menu shows (a swipe from the top edge peeks it)
     val view = androidx.compose.ui.platform.LocalView.current
@@ -898,6 +898,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                             val target = OsPrefs.vhsSwipe[dir].orEmpty()
                             when {
                                 target == "vhs:setup" -> screen = Screen.SETUP
+                                target == "vhs:chat" && com.reverender.r95.BuildConfig.NOTIF -> { Haptics.tick(); screen = Screen.CHAT }
                                 target.startsWith("pkg:") -> { Haptics.tick(); Launcher.openTarget(ctx, target, fullScreen = true) { } }
                             }
                         }
@@ -919,6 +920,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                             }
                             Screen.SETUP -> VhsSetup(f, availH, onEnd = { screen = Screen.MAIN }, onChoose = { chooseDir = it; screen = Screen.CHOOSE })
                             Screen.CHOOSE -> VhsChoose(chooseDir) { screen = Screen.SETUP }
+                            Screen.CHAT -> VhsChat(onExit = { screen = Screen.MAIN })
                         }
                     }
                 }
@@ -984,18 +986,23 @@ fun VhsShell(onShutDown: () -> Unit) {
       androidx.compose.foundation.text.BasicTextField(
           value = kbText,
           onValueChange = { v ->
-              val t = vhsSafe(v.text)
-              kbText = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(t.length))
+              // a chat message keeps what you typed (lower case, emoji); searches only take what the font shows
+              val raw = kbHolder.value?.raw == true
+              val t = if (raw) v.text else vhsSafe(v.text)
+              kbText = if (raw) v else androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(t.length))
               kbHolder.value?.set(t)
           },
           modifier = Modifier.size(1.dp).graphicsLayer { alpha = 0f }.focusRequester(kbFocus),
           singleLine = true,
           keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-              capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters,
-              imeAction = androidx.compose.ui.text.input.ImeAction.Go,
+              capitalization = if (kbHolder.value?.raw == true) androidx.compose.ui.text.input.KeyboardCapitalization.Sentences else androidx.compose.ui.text.input.KeyboardCapitalization.Characters,
+              imeAction = if (kbHolder.value?.raw == true) androidx.compose.ui.text.input.ImeAction.Send else androidx.compose.ui.text.input.ImeAction.Go,
           ),
           keyboardActions = androidx.compose.foundation.text.KeyboardActions(onGo = {
               kbHolder.value?.enter(); kbCtl?.hide(); focusMgr.clearFocus()
+          }, onSend = {
+              // chat: send and keep the keyboard up for the next message
+              kbHolder.value?.enter()
           }),
       )
     }
@@ -1677,6 +1684,7 @@ private fun cycle(list: List<Pair<String, Long>>, cur: Long): Long {
 private fun targetName(t: String): String = when {
     t.isEmpty() -> "---"
     t == "vhs:setup" -> "SETUP"
+    t == "vhs:chat" -> "WHATSAPP"
     t.startsWith("pkg:") -> Launcher.find(t.removePrefix("pkg:"))?.label?.uppercase()?.take(12) ?: "APP"
     else -> t.uppercase()
 }
@@ -1882,7 +1890,7 @@ private fun VhsChoose(dir: String, onDone: () -> Unit) {
     ) {
         VhsHeader(if (pin) "PIN APPS" else "SWIPE " + mapOf("up" to "▲", "down" to "▼", "left" to "◀", "right" to "▶")[dir], if (pin) "TAP TO PIN / UNPIN" else "CHOOSE A PROGRAM")
         if (!pin) {
-            listOf("" to "---  NOTHING", "vhs:setup" to "SETUP MENU").forEach { (k, label) ->
+            (listOf("" to "---  NOTHING", "vhs:setup" to "SETUP MENU") + (if (com.reverender.r95.BuildConfig.NOTIF) listOf("vhs:chat" to "WHATSAPP (VHS CHAT)") else emptyList())).forEach { (k, label) ->
                 Box(Modifier.pointerInput(k) { detectTapGestures { OsPrefs.setVhsSwipe(dir, k); onDone() } }) {
                     VhsText(label, invert = OsPrefs.vhsSwipe[dir].orEmpty() == k)
                 }

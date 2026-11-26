@@ -148,6 +148,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         intent?.getIntExtra("r95_vhs_viz", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsVizTheme(it) }
         intent?.getIntExtra("r95_vhs_font", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsFont(it) }
         intent?.getIntExtra("r95_vhs_curve", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsCurve(it / 100f) }
+        intent?.getStringExtra("r95_vhs_swipe_left")?.let { com.reverender.r95.os.OsPrefs.setVhsSwipe("left", it) }
+        // --es r95_vhs_chat_test <package>: VHS CHAT also takes that package's message notifications (UI check)
+        intent?.getStringExtra("r95_vhs_chat_test")?.let { com.reverender.r95.ui.vhs.VhsChats.testPkg = it }
         // --es r95_vhs_titles "LINE1~LINE2" (_ for a space): the two home-screen title lines
         intent?.getStringExtra("r95_vhs_titles")?.let { t -> val parts = (t.replace('_', ' ') + "~").split("~"); com.reverender.r95.os.OsPrefs.setVhsTitles(parts[0], parts[1]) }
         // --ei r95_vhs_grad N (-1 off) / --ez r95_vhs_mix true: multicolour background / pastel text

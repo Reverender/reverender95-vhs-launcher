@@ -17,6 +17,15 @@ timeout 20 adb exec-out screencap -p > "$OUT/N2-count.png"
 timeout 20 adb shell cmd notification post -S bigtext -t More t3 Third >/dev/null; sleep 4
 timeout 20 adb shell cmd notification cancel t1 >/dev/null; sleep 2
 timeout 20 adb exec-out screencap -p > "$OUT/N3-after-cancel.png"
+# VHS CHAT: messaging notifications (from the shell, standing in for WhatsApp), the swipe-left target
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --es r95_vhs_chat_test com.android.shell >/dev/null; sleep 2
+timeout 20 adb shell cmd notification post -S messaging --conversation Mama --message Mama:Hoi_schat --message Mama:Kom_je_zondag_eten chat1 x >/dev/null; sleep 1
+timeout 20 adb shell cmd notification post -S messaging --conversation Band_chat --message Kim:Repetitie_om_acht --message Joe:Ik_neem_de_synth_mee chat2 y >/dev/null; sleep 2
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --es r95_vhs_swipe_left vhs:chat >/dev/null; sleep 2
+adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 3
+timeout 20 adb exec-out screencap -p > "$OUT/N4-chats.png"
+adb shell input tap $((W/3)) $((H*25/100)); sleep 3
+timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 # ---- the VHS-only APK (R8-stripped release)
