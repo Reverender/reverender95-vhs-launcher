@@ -278,7 +278,11 @@ private class Box3(
 )
 private val BOX_F = arrayOf(intArrayOf(0, 1, 2, 3), intArrayOf(5, 4, 7, 6), intArrayOf(4, 0, 3, 7), intArrayOf(1, 5, 6, 2), intArrayOf(4, 5, 1, 0), intArrayOf(3, 2, 6, 7))
 private val BOX_V = floatArrayOf(-1f, -1f, -1f, 1f, -1f, -1f, 1f, 1f, -1f, -1f, 1f, -1f, -1f, -1f, 1f, 1f, -1f, 1f, 1f, 1f, 1f, -1f, 1f, 1f)
-private class FaceDraw(val z: Float, val path: Path, val col: Color, val edge: Color?, val box: Box3, val idx: Int)
+private class FaceDraw(var z: Float = 0f, val path: Path = Path(), var col: Color = Color.Black, var edge: Color? = null, var box: Box3? = null, var idx: Int = 0)
+// reused every frame (no new paths / objects per face per frame: less garbage, steadier frame times)
+private val facePool = ArrayList<FaceDraw>()
+private val faceList = ArrayList<FaceDraw>()
+private val faceOrder = Comparator<FaceDraw> { a, b -> b.z.compareTo(a.z) }
 private val cvx = FloatArray(8); private val cvy = FloatArray(8); private val cvz = FloatArray(8)
 private val csx = FloatArray(8); private val csy = FloatArray(8)
 
@@ -287,7 +291,8 @@ private val csx = FloatArray(8); private val csy = FloatArray(8)
  * near. Camera space: x right, y down, z away; the camera sits at z = -5. [scale] = pixels per unit at z = 0.
  */
 private fun DrawScope.solids(boxes: List<Box3>, cx: Float, cy: Float, scale: Float) {
-    val faces = ArrayList<FaceDraw>(boxes.size * 3)
+    faceList.clear()
+    var used = 0
     for (b in boxes) {
         val ca = cos(b.ay); val sa = sin(b.ay); val cb = cos(b.ax); val sb = sin(b.ax)
         for (i in 0 until 8) {
@@ -307,15 +312,18 @@ private fun DrawScope.solids(boxes: List<Box3>, cx: Float, cy: Float, scale: Flo
             val len = kotlin.math.sqrt(nx * nx + ny * ny + nz * nz).coerceAtLeast(1e-4f)
             val light = (-(nx * -0.3f + ny * -0.75f + nz * -0.55f) / len).coerceIn(0f, 1f)
             val shade = 0.42f + 0.58f * light
-            val p = Path(); p.moveTo(csx[f[0]], csy[f[0]]); for (k in 1..3) p.lineTo(csx[f[k]], csy[f[k]]); p.close()
-            val zc = (cvz[f[0]] + cvz[f[1]] + cvz[f[2]] + cvz[f[3]]) / 4f
-            faces.add(FaceDraw(zc, p, Color(b.col.red * shade, b.col.green * shade, b.col.blue * shade, b.col.alpha), b.edge, b, fi))
+            if (used == facePool.size) facePool.add(FaceDraw())
+            val fd = facePool[used++]
+            val p = fd.path; p.reset(); p.moveTo(csx[f[0]], csy[f[0]]); for (k in 1..3) p.lineTo(csx[f[k]], csy[f[k]]); p.close()
+            fd.z = (cvz[f[0]] + cvz[f[1]] + cvz[f[2]] + cvz[f[3]]) / 4f
+            fd.col = Color(b.col.red * shade, b.col.green * shade, b.col.blue * shade, b.col.alpha); fd.edge = b.edge; fd.box = b; fd.idx = fi
+            faceList.add(fd)
         }
     }
-    faces.sortByDescending { it.z }
-    for (fd in faces) {
+    faceList.sortWith(faceOrder)
+    for (fd in faceList) {
         drawPath(fd.path, fd.col)
-        val pic = fd.box.face
+        val pic = fd.box?.face
         if (pic != null) {
             val bnd = fd.path.getBounds()
             clipPath(fd.path) { this.pic(fd.idx, bnd) }

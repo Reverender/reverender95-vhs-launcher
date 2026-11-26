@@ -162,6 +162,14 @@ object AmpEngine : PlayerConnection.Events {
     }
     fun playCuedFile() = playCustomLocalFile(currentCustomFileIdx)
 
+    /** VHS ◀◀ ▶▶ on the deck: the previous / next song; [play] or only cue it. Returns its title. */
+    fun stepDeck(dir: Int, play: Boolean): String {
+        val e = (p.deckIndex + dir).mod(Catalog.deck.size)
+        activeSourceMode = "deck"
+        if (play) { isPlaying = true; selectTrack(e, true, true) } else { isPlaying = false; wasPaused = false; selectTrack(e, true, false) }
+        return Catalog.deck[e].title
+    }
+
     fun playRandomTrackAndOffset() {
         var e = (Math.random() * Catalog.deck.size).toInt()
         if (e == p.deckIndex) e = (e + 1) % Catalog.deck.size
@@ -187,6 +195,9 @@ object AmpEngine : PlayerConnection.Events {
     // ------------------------------------------------------------ radio
     var radioName = ""; private set
     var pressedStation = -1; private set
+    /** a station was taken off the list: keep pointing at the same one */
+    fun stationRemoved(i: Int) { if (pressedStation == i) pressedStation = -1 else if (pressedStation > i) pressedStation-- }
+    fun stationInserted(i: Int) { if (pressedStation >= i) pressedStation++ }
 
     fun playInternetRadio(i: Int) {
         val s = Catalog.radioPresets.getOrNull(i) ?: return

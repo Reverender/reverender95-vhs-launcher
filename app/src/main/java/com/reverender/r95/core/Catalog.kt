@@ -30,7 +30,31 @@ object Catalog {
     /** The 24-track deck, streamed from the site root exactly like the web player does. */
     val deck: List<Track> = trackTitles.zip(trackFiles) { t, f -> Track(t, Site.BASE_URL + f) }
 
-    val radioPresets: List<Station> = listOf(
+    /** the radio stations on the VHS home row: the defaults until you add or remove one, then your own list */
+    val radioPresets = androidx.compose.runtime.mutableStateListOf<Station>()
+    fun loadStations(ctx: android.content.Context) {
+        val saved = ctx.getSharedPreferences("radio_presets", android.content.Context.MODE_PRIVATE).getString("list", null)
+        val list = saved?.let { runCatching {
+            val a = org.json.JSONArray(it); List(a.length()) { i -> a.getJSONObject(i).let { o -> Station(o.getString("n"), o.getString("u")) } }
+        }.getOrNull() } ?: defaultStations
+        radioPresets.clear(); radioPresets.addAll(list)
+    }
+    private fun saveStations(ctx: android.content.Context) {
+        val a = org.json.JSONArray(); radioPresets.forEach { a.put(org.json.JSONObject().put("n", it.name).put("u", it.url)) }
+        ctx.getSharedPreferences("radio_presets", android.content.Context.MODE_PRIVATE).edit().putString("list", a.toString()).apply()
+    }
+    /** false if it was already there */
+    fun addStation(ctx: android.content.Context, s: Station): Boolean {
+        if (radioPresets.any { it.url == s.url }) return false
+        radioPresets.add(s); saveStations(ctx); return true
+    }
+    fun removeStation(ctx: android.content.Context, i: Int): Station? {
+        if (i !in radioPresets.indices || radioPresets.size <= 1) return null
+        return radioPresets.removeAt(i).also { saveStations(ctx) }
+    }
+    fun insertStation(ctx: android.content.Context, i: Int, s: Station) { radioPresets.add(i.coerceIn(0, radioPresets.size), s); saveStations(ctx) }
+
+    private val defaultStations: List<Station> = listOf(
         Station("🌴 Nightwave Plaza", "https://radio.plaza.one/mp3"),
         Station("🇬🇧 Smooth 80s London", "https://media-ssl.musicradio.com/Smooth80s"),
         Station("🇺🇸 US Jazz Station", "http://jazz-wr01.ice.infomaniak.ch/jazz-wr01-128.mp3"),
@@ -40,8 +64,9 @@ object Catalog {
         Station("🌊 SomaFM Vaporwaves", "https://ice1.somafm.com/vaporwaves-128-mp3"),
         Station("👾 SomaFM DEF CON", "https://ice1.somafm.com/defcon-128-mp3"),
         // looked up live in the radio directory (fixed hardcore stream addresses come and go)
-        Station("🔊 Hardcore Radio", "dir:gabber hardcore|http://radio.hearme.fm:8328/stream|http://liquiddoom.net:8000/hardcore"),
+        Station("🔊 Hardcore Radio", "dir:gabber hardcore|http://liquiddoom.net:8000/hardcore"),
     )
+    init { radioPresets.addAll(defaultStations) }
 
     val eqFrequencies: FloatArray = floatArrayOf(60f, 170f, 350f, 1000f, 3000f, 6000f, 12000f, 16000f)
 

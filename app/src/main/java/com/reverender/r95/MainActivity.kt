@@ -141,6 +141,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         com.reverender.r95.audio.SiteStudio.install(appState)
         player.connect()
         com.reverender.r95.os.OsPrefs.init(this)
+        com.reverender.r95.core.Catalog.loadStations(this)
         // test hook: --ef r95_vhs_uiblur 0.6 sets the UI motion blur
         intent?.getFloatExtra("r95_vhs_uiblur", -1f)?.takeIf { it >= 0f }?.let { com.reverender.r95.os.OsPrefs.setVhsUiBlur(it) }
         // test hooks: --ei r95_vhs_wall N / --ei r95_vhs_viz N pick the 3D wallpaper / visualizer look

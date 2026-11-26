@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -134,6 +135,34 @@ private val STANDARDS = listOf(
 
 // ---------------------------------------------------------------- text
 
+/**
+ * A ticker line [cols] characters wide: the text runs in from the right, off the left edge and round again,
+ * so long names (radio stations, files, songs) can always be read. Moved on the GPU layer only (no redraw).
+ */
+@Composable
+internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null) {
+    val o = LocalOsd.current
+    val d = LocalDensity.current
+    val wDp = with(d) { ((cols * 6 + 1) * o.px).toDp() }
+    val hDp = with(d) { (9 * o.px).toDp() }
+    val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    val textW = (text.length * 6 + 1) * o.px
+    val fieldW = (cols * 6 + 1) * o.px
+    LaunchedEffect(text, o.px) {
+        val speed = o.px * 6 / 0.16f // a character every 0.16 s
+        val t0 = androidx.compose.runtime.withFrameNanos { it }
+        while (true) {
+            androidx.compose.runtime.withFrameNanos { t ->
+                val run = fieldW + textW
+                shift.floatValue = fieldW - ((t - t0) / 1e9f * speed) % run
+            }
+        }
+    }
+    Box(modifier.size(wDp, hDp).clipToBounds()) {
+        VhsText(text, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).graphicsLayer { translationX = shift.floatValue }, color = color)
+    }
+}
+
 /** A line of OSD text: dot-matrix glyphs with a hard black drop shadow, like a VCR character generator. */
 @Composable
 fun VhsText(text: String, modifier: Modifier = Modifier, scale: Float = 1f, color: Color? = null, invert: Boolean = false) {
@@ -193,7 +222,7 @@ internal object VhsBloomPulse {
 
 /** Bloom: two soft, oversized passes of each lit dot under the text (cheap stand-in for a blur). */
 /** VHS lettering styles, after the on-screen displays of different VCR makers */
-internal val VHS_FONTS = listOf("VCR OSD", "BOLD OSD", "OUTLINE", "ITALIC", "DOT MATRIX", "SCANLINE", "SLIM", "SMOOTH")
+internal val VHS_FONTS = listOf("VCR OSD", "BOLD OSD", "BLOCK 3D", "ITALIC", "DOT MATRIX", "SCANLINE", "VFD PANEL", "ROUNDED")
 /** OUTLINE style: is cell (r, b) next to the letter (but not part of it)? */
 private fun outlineAt(rows: IntArray, r: Int, b: Int): Boolean {
     fun on(rr: Int, bb: Int) = rr in 0..6 && bb in 0..4 && rows[rr] and (1 shl (4 - bb)) != 0
@@ -202,9 +231,9 @@ private fun outlineAt(rows: IntArray, r: Int, b: Int): Boolean {
     return false
 }
 /** a glyph row in the current lettering style (BOLD thickens the strokes) */
-private fun styledBits(bits: Int, style: Int) = if (style == 1) (bits or (bits shr 1)) else bits
+private fun styledBits(bits: Int, @Suppress("UNUSED_PARAMETER") style: Int) = bits
 /** ITALIC leans the rows over */
-private fun rowShift(r: Int, style: Int, px: Float) = if (style == 3) (6 - r) * px * 0.2f else 0f
+private fun rowShift(r: Int, style: Int, px: Float) = if (style == 3) (6 - r) * px * 0.17f else 0f
 
 internal fun DrawScope.drawBloom(text: String, x0: Float, y0: Float, px: Float, ink: Color, gain: Float = 1f) {
     val outer = ink.copy(alpha = (0.06f * gain).coerceAtMost(1f)); val inner = ink.copy(alpha = (0.11f * gain).coerceAtMost(1f))
@@ -229,7 +258,8 @@ internal fun DrawScope.drawBloom(text: String, x0: Float, y0: Float, px: Float, 
 internal fun DrawScope.drawGlyphs(text: String, x0: Float, y0: Float, px: Float, shadow: Color?, ink: Color) {
     val style = OsPrefs.vhsFont
     // the pixel each style is built from
-    val dot = when (style) { 5 -> Size(px, px * 0.42f); 6 -> Size(px * 0.6f, px); else -> Size(px, px) }
+    val dot = when (style) { 1 -> Size(px * 1.35f, px); 5 -> Size(px, px * 0.42f); 6 -> Size(px * 0.78f, px * 0.78f); else -> Size(px, px) }
+    val corner = androidx.compose.ui.geometry.CornerRadius(px * 0.45f, px * 0.45f)
     // PASTEL MIX: ordinary text (in the TEXT colour) goes letter by letter through the pastels
     val mix = OsPrefs.vhsFgMix && ink.value == Color(OsPrefs.vhsFg.toInt()).value
     var n = 0
@@ -245,23 +275,23 @@ internal fun DrawScope.drawGlyphs(text: String, x0: Float, y0: Float, px: Float,
                 if (bits == 0) continue
                 val sh = rowShift(r, style, px)
                 val y = y0 + r * px + off
-                if (style == 2) {
-                    // OUTLINE: a one-pixel line around the letter, the inside left open
-                    for (b in -1..5) {
-                        if (b in 0..4 && bits and (1 shl (4 - b)) != 0) continue
-                        if (outlineAt(rows, r, b)) drawRect(col, Offset(gx + b * px, y), dot)
-                    }
-                    if (r == 0) for (b in -1..5) if (outlineAt(rows, -1, b)) drawRect(col, Offset(gx + b * px, y - px), dot)
-                    if (r == 6) for (b in -1..5) if (outlineAt(rows, 7, b)) drawRect(col, Offset(gx + b * px, y + px), dot)
-                    continue
-                }
+                // VFD PANEL: every cell of the 5×7 grid glows faintly, like an unlit display
+                if (style == 6 && pass == 1) for (b in 0 until 5) if (bits and (1 shl (4 - b)) == 0) drawRect(col.copy(alpha = col.alpha * 0.10f), Offset(gx + b * px + px * 0.11f, y + px * 0.11f), dot)
                 for (b in 0 until 5) if (bits and (1 shl (4 - b)) != 0) {
                     val x = gx + b * px + sh
                     when (style) {
+                        // BLOCK 3D: a deep extruded shadow down-right, then the letter
+                        2 -> { if (pass == 1) drawRect(col.copy(alpha = col.alpha * 0.38f), Offset(x + px * 0.75f, y + px * 0.75f), dot); drawRect(col, Offset(x, y), dot) }
                         4 -> drawCircle(col, px * 0.47f, Offset(x + px / 2, y + px / 2))
                         5 -> { drawRect(col, Offset(x, y), dot); drawRect(col.copy(alpha = col.alpha * 0.55f), Offset(x, y + px * 0.55f), dot) }
-                        6 -> drawRect(col, Offset(x + px * 0.2f, y), dot)
-                        7 -> drawCircle(col, px * 0.66f, Offset(x + px / 2, y + px / 2))
+                        6 -> { drawRect(col.copy(alpha = col.alpha * 0.3f), Offset(x - px * 0.1f, y - px * 0.1f), Size(px, px)); drawRect(col, Offset(x + px * 0.11f, y + px * 0.11f), dot) }
+                        // ROUNDED: round dots joined to their neighbours, so strokes come out smooth with round ends
+                        7 -> {
+                            drawRoundRect(col, Offset(x, y), Size(px, px), corner)
+                            if (b < 4 && bits and (1 shl (3 - b)) != 0) drawRect(col, Offset(x + px * 0.5f, y), Size(px, px))
+                            val below = if (r < 6) styledBits(rows[r + 1], style) else 0
+                            if (below and (1 shl (4 - b)) != 0) drawRect(col, Offset(x, y + px * 0.5f), Size(px, px))
+                        }
                         else -> drawRect(col, Offset(x, y), dot)
                     }
                 }
@@ -272,15 +302,20 @@ internal fun DrawScope.drawGlyphs(text: String, x0: Float, y0: Float, px: Float,
 
 /** Tappable OSD text (a "button" is just text, optionally boxed or inverted when selected). */
 @Composable
-internal fun VhsKey(text: String, selected: Boolean = false, boxed: Boolean = false, scale: Float = 1f, onTap: () -> Unit) {
+internal fun VhsKey(text: String, selected: Boolean = false, boxed: Boolean = false, scale: Float = 1f, onLong: (() -> Unit)? = null, onTap: () -> Unit) {
     val o = LocalOsd.current
+    // always the latest action (the key's touch handler outlives recompositions; a stale one acted on old state)
+    val tap by androidx.compose.runtime.rememberUpdatedState(onTap)
+    val long by androidx.compose.runtime.rememberUpdatedState(onLong)
     Box(
         Modifier.then(if (boxed && !selected) Modifier.drawBehind {
             val w = o.px * 0.5f
             glowRect(o.fg, Offset(w / 2, w / 2), Size(size.width - w, size.height - w), o.px, w)
             drawRect(o.fg, Offset(w / 2, w / 2), Size(size.width - w, size.height - w), style = Stroke(w))
         } else Modifier)
-            .pointerInput(text) { detectTapGestures { Haptics.tick(); onTap() } },
+            .pointerInput(text, onLong != null) {
+                detectTapGestures(onLongPress = if (onLong == null) null else { _ -> long?.invoke() }) { Haptics.tick(); tap() }
+            },
     ) { VhsText(text, invert = selected, scale = scale) }
 }
 
@@ -1152,6 +1187,9 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         var radioMode by remember { mutableStateOf(false) }
         // something chosen (station, deck, next song) that waits for PLAY
         var pending by remember { mutableStateOf<Pending?>(null) }
+        // a station just held off the row: UNDO for a few seconds
+        var undoStation by remember { mutableStateOf<Pair<Int, com.reverender.r95.core.Station>?>(null) }
+        LaunchedEffect(undoStation) { if (undoStation != null) { delay(5000); undoStation = null } }
         val stations = remember { androidx.compose.runtime.mutableStateListOf<com.reverender.r95.net.StationDirectory.Row>() }
         var radioMsg by remember { mutableStateOf<String?>(null) }
         var radioN by remember { mutableIntStateOf(0) }
@@ -1212,7 +1250,15 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
                     VhsKey("DECK", selected = if (pk != null) pk == "deck" else deckOn, boxed = true) { pending = Pending("deck", "DECK") { AmpEngine.switchToInternalDeck() } }
                     Catalog.radioPresets.forEachIndexed { i, s ->
                         val nm = s.name.substringAfter(' ').uppercase().take(16)
-                        VhsKey(nm, selected = if (pk != null) pk == "st$i" else (p.mode == com.reverender.r95.audio.SourceMode.RADIO && station == i), boxed = true) {
+                        // hold a station to take it off the row (UNDO brings it back)
+                        VhsKey(nm, selected = if (pk != null) pk == "st$i" else (p.mode == com.reverender.r95.audio.SourceMode.RADIO && station == i), boxed = true, onLong = {
+                            Catalog.removeStation(ctx, i)?.let { gone ->
+                                Haptics.clunk("eject"); AmpEngine.stationRemoved(i)
+                                if (station == i) station = -1 else if (station > i) station--
+                                if (pending?.key?.startsWith("st") == true) pending = null
+                                undoStation = i to gone
+                            }
+                        }) {
                             pending = Pending("st$i", vhsSafe(nm).take(15)) { station = i; AmpEngine.playInternetRadio(i) }
                         }
                     }
@@ -1221,7 +1267,11 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
             if (radioMode && q.isNotEmpty()) {
                 radioMsg?.let { VhsText(it, color = o.fg.copy(alpha = 0.6f)) }
                 stations.forEachIndexed { i, r ->
-                    Box(Modifier.pointerInput(r.url) { detectTapGestures { tune(r) } }) {
+                    // tap: listen; hold: add it to the station row
+                    Box(Modifier.pointerInput(r.url) { detectTapGestures(onLongPress = {
+                        val added = Catalog.addStation(ctx, com.reverender.r95.core.Station("📻 " + r.name.trim(), r.url))
+                        Haptics.clunk("play"); radioMsg = if (added) "ADDED TO THE STATIONS" else "ALREADY IN THE STATIONS"
+                    }) { tune(r) } }) {
                         VhsText("${i + 1} " + vhsSafe(r.name).trim().take(19))
                     }
                 }
@@ -1257,7 +1307,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
                 if (playing && pending == null) {
                     if (files && AmpEngine.stepFile(dir)) return
                     if (radioOn) AmpEngine.playInternetRadio((AmpEngine.pressedStation.coerceAtLeast(0) + dir).mod(Catalog.radioPresets.size))
-                    else AmpEngine.playRandomTrackAndOffset() // one of the 24 deck songs, somewhere random in it
+                    else AmpEngine.stepDeck(dir, play = true) // the next / previous deck song
                     return
                 }
                 val pk = pending?.key
@@ -1268,7 +1318,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
                         pending = Pending("st$i", vhsSafe(Catalog.radioPresets[i].name.substringAfter(' ')).take(15)) { AmpEngine.playInternetRadio(i) }
                     }
                     files -> AmpEngine.cueFileStep(dir)?.let { n -> pending = Pending("file", vhsSafe(n).take(15)) { AmpEngine.playCuedFile() } }
-                    else -> { val t = AmpEngine.cueRandomTrack(); pending = Pending("cue", vhsSafe(t).take(15)) { AmpEngine.playCurrentAudio("PLAY") } }
+                    else -> { val t = AmpEngine.stepDeck(dir, play = false); pending = Pending("cue", vhsSafe(t).take(15)) { AmpEngine.playCurrentAudio("PLAY") } }
                 }
                 Haptics.tick()
             }
@@ -1310,9 +1360,14 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
             else -> p.nowPlaying.ifBlank { "NO TAPE" }
         }
         val pd = pending
-        if (pd != null) VhsText(("READY:" + pd.label).take(21), invert = blink)
-        else if (ext) VhsText("♪ OTHER MUSIC APP")
-        else VhsText(title.uppercase().take(21))
+        val un = undoStation
+        if (un != null) VhsKey(("UNDO: " + vhsSafe(un.second.name.substringAfter(' ')).trim()).take(21), selected = true) {
+            Catalog.insertStation(ctx, un.first, un.second); AmpEngine.stationInserted(un.first); undoStation = null; Haptics.tick()
+        }
+        else if (pd != null) VhsText(("READY:" + pd.label).take(21), invert = blink)
+        // what's playing runs past as a ticker, so long names are readable
+        else if (ext) VhsMarquee("♪ " + vhsSafe(listOf(ExtMedia.artist, ExtMedia.title).filter { it.isNotBlank() }.joinToString(" - ").ifBlank { "OTHER MUSIC APP" }).trim())
+        else VhsMarquee(vhsSafe(title).trim())
 
         // ---- VOLUME
         VhsText("VOLUME")
@@ -1495,7 +1550,7 @@ private fun VhsSpectrum(modifier: Modifier, musicOn: () -> Boolean) {
             5 -> when { h < 0.6f -> Color(0xFF2BFF6A); h < 0.85f -> Color(0xFFFFE23A); else -> Color(0xFFFF3030) } // VU: green, yellow, red
             6 -> when (i % 3) { 0 -> Color(0xFFFF3B3B); 1 -> Color(0xFF3BFF5A); else -> Color(0xFF4A7BFF) }         // CRT phosphor triads
             7 -> Color(0xFFFFB000)                                                                                   // amber
-            8 -> if (h < 0.5f) Color(0xFFFF2BD6) else Color(0xFF29F3FF)                                              // neon: pink, cyan on top
+            8 -> if (h < 0.86f) Color(0xFF6CFFE6) else Color(0xFFFF7A2E)                                             // VFD: phosphor aqua, orange "peak" lamps
             else -> o.fg
         }
         val mirror = style == 2
@@ -1624,23 +1679,29 @@ private fun VhsSpectrum(modifier: Modifier, musicOn: () -> Boolean) {
                     drawRect(Brush.verticalGradient(listOf(c, c.copy(alpha = 0.35f)), size.height - h, size.height), Offset(x, size.height - h), Size(barW, h))
                     drawRect(Color.White.copy(alpha = 0.8f), Offset(x, size.height - h), Size(barW, px * 0.6f))
                 }
-                3 -> { // neon LED: round lamps on a square grid, lit ones glowing, a white peak lamp
-                    val pitch = colW
-                    val rows = (size.height / pitch).toInt().coerceAtLeast(1)
-                    val lit = (v * rows).toInt()
-                    val pk = (peak[i] * rows).toInt().coerceIn(0, rows - 1)
-                    val r = pitch * 0.36f
-                    for (k in 0 until rows) {
-                        val cxy = Offset(x + barW / 2, size.height - (k + 0.5f) * pitch)
-                        val c = colAt(i, k / rows.toFloat())
-                        if (k < lit) {
-                            drawCircle(c.copy(alpha = 0.22f), r * 1.7f, cxy, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
-                            drawCircle(c, r, cxy)
-                            drawCircle(Color.White.copy(alpha = 0.7f), r * 0.32f, cxy - Offset(r * 0.3f, r * 0.3f))
-                        } else if (k == pk && peak[i] > 0.02f) {
-                            drawCircle(Color.White.copy(alpha = 0.25f), r * 1.6f, cxy, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
-                            drawCircle(Color.White, r * 0.85f, cxy)
-                        } else drawCircle(c.copy(alpha = 0.16f), r * 0.8f, cxy, style = androidx.compose.ui.graphics.drawscope.Stroke(px * 0.4f))
+                3 -> { // VFD DECK: the vacuum-fluorescent display of a VCR's front panel. Thin glowing segments
+                    // behind the blue-grey mesh, every unlit segment faintly visible, the last ones orange, a hold bar
+                    val step = seg + segGap
+                    val lit = (v * segs).toInt()
+                    val pk = (peak[i] * segs).toInt().coerceIn(0, segs - 1)
+                    val sw = barW * 0.86f; val sx = x + (barW - sw) / 2
+                    for (k in 0 until segs) {
+                        val y = size.height - (k + 1) * step
+                        val c = colAt(i, k / segs.toFloat())
+                        when {
+                            k < lit -> {
+                                drawRect(c.copy(alpha = 0.16f), Offset(sx - px * 0.7f, y - px * 0.5f), Size(sw + px * 1.4f, seg + px))
+                                drawRect(c, Offset(sx, y + seg * 0.12f), Size(sw, seg * 0.76f))
+                                drawRect(Color.White.copy(alpha = 0.35f), Offset(sx, y + seg * 0.12f), Size(sw, seg * 0.22f))
+                            }
+                            k == pk && peak[i] > 0.02f -> drawRect(Color(0xFFFF7A2E), Offset(sx, y + seg * 0.2f), Size(sw, seg * 0.6f))
+                            else -> drawRect(c.copy(alpha = 0.07f), Offset(sx, y + seg * 0.12f), Size(sw, seg * 0.76f))
+                        }
+                    }
+                    // the panel's fine mesh over the whole display (once)
+                    if (i == n - 1) {
+                        var mx = 0f
+                        while (mx < size.width) { drawRect(Color.Black.copy(alpha = 0.18f), Offset(mx, 0f), Size(px * 0.35f, size.height)); mx += px * 1.5f }
                     }
                 }
                 else -> { // segments
@@ -1671,11 +1732,32 @@ private fun VhsSpectrum(modifier: Modifier, musicOn: () -> Boolean) {
 /** Visualizer looks: name, shape (0 segments, 2 mirror, 3 dots, 4 tape blocks, 5 scanlines, 6 scope, 7 wireframe), colours (0 OSD, 5 VU, 6 RGB, 7 amber, 8 neon). */
 private val VIZ_THEMES = listOf(
     Triple("CLASSIC", 0, 0), Triple("VU METER", 0, 5), Triple("TAPE BLOCKS", 4, 0), Triple("RGB PHOSPHOR", 0, 6),
-    Triple("SCANLINES", 5, 0), Triple("SCOPE", 6, 7), Triple("NEON LED", 3, 8), Triple("MIRROR", 2, 0), Triple("WIREFRAME", 7, 0),
+    Triple("SCANLINES", 5, 0), Triple("SCOPE", 6, 7), Triple("VFD DECK", 3, 8), Triple("MIRROR", 2, 0), Triple("WIREFRAME", 7, 0),
 )
 private fun lerpC(a: Color, b: Color, t: Float): Color { val k = t.coerceIn(0f, 1f); return Color(a.red + (b.red - a.red) * k, a.green + (b.green - a.green) * k, a.blue + (b.blue - a.blue) * k) }
 
 // ---------------------------------------------------------------- SETUP
+
+/** a CRT / reception style: snow, glitch, scanlines, artifact lines, curve, background blur, UI blur, chroma */
+private class CrtStyle(val name: String, vararg val v: Float) {
+    private fun cur() = floatArrayOf(OsPrefs.vhsSnow, OsPrefs.vhsGlitch, OsPrefs.vhsScan, OsPrefs.vhsLines, OsPrefs.vhsCurve, OsPrefs.vhsBlur, OsPrefs.vhsUiBlur, OsPrefs.vhsChroma)
+    fun matches() = cur().withIndex().all { (i, x) -> kotlin.math.abs(x - v[i]) < 0.006f }
+    fun apply() {
+        OsPrefs.setVhsSnow(v[0]); OsPrefs.setVhsGlitch(v[1]); OsPrefs.setVhsScan(v[2]); OsPrefs.setVhsLines(v[3])
+        OsPrefs.setVhsCurve(v[4]); OsPrefs.setVhsBlur(v[5]); OsPrefs.setVhsUiBlur(v[6]); OsPrefs.setVhsChroma(v[7])
+    }
+}
+//                                    SNOW  GLTCH SCAN  LINES CURVE BGBLR UIBLR CHROMA
+private val CRT_STYLES = listOf(
+    CrtStyle("OFF",             0f,   0f,   0f,   0f,   0f,   0f,   0f,   0f),
+    CrtStyle("TRINITRON",       0f,   0f,   0.30f, 0.10f, 0.05f, 0.10f, 0f,   0.05f), // flat, crisp, a 90s living-room set
+    CrtStyle("STUDIO MONITOR",  0.05f, 0f,  0.45f, 0.15f, 0.15f, 0.15f, 0f,   0.10f), // clean broadcast picture
+    CrtStyle("CABLE TV",        0.15f, 0.15f, 0.60f, 0.40f, 0.30f, 0.30f, 0.05f, 0.30f),
+    CrtStyle("RENTAL TAPE",     0.45f, 0.55f, 0.70f, 0.65f, 0.30f, 0.35f, 0.15f, 0.45f), // a well-worn video store tape
+    CrtStyle("RABBIT EARS",     0.85f, 0.35f, 0.60f, 0.50f, 0.35f, 0.50f, 0.20f, 0.35f), // weak antenna reception
+    CrtStyle("ARCADE CRT",      0.05f, 0.05f, 1.00f, 0.25f, 0.60f, 0.40f, 0.10f, 0.55f), // heavy scanlines, round tube
+    CrtStyle("BROKEN VCR",      0.60f, 1.00f, 0.70f, 1.00f, 0.40f, 0.60f, 0.35f, 0.80f), // tracking gone, heads dirty
+)
 
 /** a ready-made look: background, text, 3D wallpaper (-1 none), visualizer look, tape wear, colour fringe */
 private class VhsTheme(val name: String, val bg: Long, val fg: Long, val wall: Int, val viz: Int, val glitch: Float, val chroma: Float, val grad: Int = -1, val mix: Boolean = false) {
@@ -1754,9 +1836,10 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
         // the CRT look: set with the SNOW / GLITCH / LINES / CURVE sliders under this row; tapping it switches
         // the first three all off, or back to their defaults
-        "CRT   " + (if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines + OsPrefs.vhsScan > 0f) "EFFECTS" else "OFF") to {
-            if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines + OsPrefs.vhsScan > 0f) { OsPrefs.setVhsSnow(0f); OsPrefs.setVhsGlitch(0f); OsPrefs.setVhsLines(0f); OsPrefs.setVhsScan(0f) }
-            else { OsPrefs.setVhsSnow(0.5f); OsPrefs.setVhsGlitch(0.5f); OsPrefs.setVhsLines(0.6f); OsPrefs.setVhsScan(0.7f) }
+        // CRT: TV / reception styles, each a setting of every slider below (except DIM); moving a slider = CUSTOM
+        "CRT   " + (CRT_STYLES.firstOrNull { it.matches() }?.name ?: "CUSTOM") to {
+            val i = CRT_STYLES.indexOfFirst { it.matches() }
+            CRT_STYLES[(i + 1).mod(CRT_STYLES.size)].apply()
         },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
