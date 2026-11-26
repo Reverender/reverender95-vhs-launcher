@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Reverender95" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/r95_black</item>
+        <item name="android:statusBarColor">@color/r95_black</item>
+        <item name="android:navigationBarColor">@color/r95_black</item>
+    </style>
+    <color name="r95_black">#0D0221</color>
+    <color name="r95_teal">#008080</color>
+</resources>

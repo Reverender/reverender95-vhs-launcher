@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">REVERENDER_95</string>
+    <string name="widget_cassette_desc">CASSETTE_95 tape deck</string>
+    <string name="widget_amp_desc">VAPOR_AMP 95 player</string>
+    <string name="widget_fx_desc">DSP_FX_95 one-tap preset matrix</string>
+    <string name="widget_vu_desc">Live ANALOG_VU meters</string>
+    <string name="widget_cassette">CASSETTE_95</string>
+    <string name="widget_amp">VAPOR_AMP 95</string>
+    <string name="widget_fx">DSP_FX_95 presets</string>
+    <string name="widget_vu">ANALOG_VU</string>
+    <string name="live_wp_name">REVERENDER_95 worlds</string>
+    <string name="live_wp_desc">The 29 animated worlds, reacting to your music</string>
+    <string name="dream_name">REVERENDER_95 CRT</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Many internet radio stations (including the US Jazz preset and lots of
+     radio-browser results) still stream over plain http, so cleartext is
+     allowed for audio. Revy and the site itself are always called over https. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

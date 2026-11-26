@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VHS-only APK: everything the VHS/VCR launcher doesn't use is taken out of the main manifest. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- desktop-only permissions: system-audio capture (DSP rack / reactive visuals), alarms, uninstalling, C:\MUSIC -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-feature android:name="android.software.live_wallpaper" tools:node="remove" />
+    <uses-feature android:name="android.hardware.usb.host" tools:node="remove" />
+    <uses-feature android:name="android.software.midi" tools:node="remove" />
+
+    <application>
+        <!-- desktop extras: live wallpaper, screen saver, widgets, Office Plaza alarms, global EQ, system-audio capture -->
+        <activity android:name=".ui.apps.LiveWallpaperSettingsActivity" tools:node="remove" />
+        <activity android:name=".ui.apps.DreamSettingsActivity" tools:node="remove" />
+        <service android:name=".os.R95Dream" tools:node="remove" />
+        <service android:name=".os.R95LiveWallpaper" tools:node="remove" />
+        <service android:name=".audio.ProjectionService" tools:node="remove" />
+        <receiver android:name=".audio.EffectSessionReceiver" tools:node="remove" />
+        <receiver android:name=".os.OfficeAlarmReceiver" tools:node="remove" />
+        <receiver android:name=".os.WidgetActionReceiver" tools:node="remove" />
+        <receiver android:name=".os.CassetteWidget" tools:node="remove" />
+        <receiver android:name=".os.AmpWidget" tools:node="remove" />
+        <receiver android:name=".os.FxWidget" tools:node="remove" />
+        <receiver android:name=".os.VuWidget" tools:node="remove" />
+    </application>
+</manifest>

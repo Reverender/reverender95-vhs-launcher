@@ -1,0 +1,1 @@
+{"fns":["cassetteDeckPlay","setVideo95YoutubeCassetteRate","playMechanicalClick","ensureDspChain","canvasWindowIsActive","rrWindowHidden"],"vars":["audioEl","audioCtx","casCueBandpass","analyser","useSynthFallback","isPlaying","eqBands","TRACK_SOURCES","TRACK_TITLES","currentTrackIndex"]}
