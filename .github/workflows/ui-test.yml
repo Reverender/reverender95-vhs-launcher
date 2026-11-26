@@ -11,7 +11,7 @@ permissions:
 jobs:
   perf:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
       - name: Free disk space for the emulator
         run: |
@@ -45,6 +45,18 @@ jobs:
           ram-size: 2048M
           heap-size: 128M
           script: timeout 30m bash .github/scripts/ui.sh 2>&1 | tee /tmp/ui-report.txt; mkdir -p ui; cp /tmp/ui-report.txt ui/report.txt
+      - name: CRT curve on Android 14 (GPU shader)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          disk-size: 2048M
+          ram-size: 2048M
+          script: timeout 8m bash .github/scripts/ui-curve.sh 2>&1 | tee ui/curve-report.txt
       - name: Publish results to the ui-results branch
         if: always()
         run: |

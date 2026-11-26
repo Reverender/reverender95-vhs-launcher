@@ -86,6 +86,8 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.layout
 import kotlinx.coroutines.flow.collectLatest
@@ -497,6 +499,63 @@ internal fun VhsHeader1(title: String) {
 
 // ---------------------------------------------------------------- CRT
 
+/**
+ * CURVE: the picture bends like a curved CRT tube towards the corners (Android 13+, a GPU shader on the whole
+ * screen): each corner is pulled in and rounded off into black, with a little colour fringe and darkening at
+ * the tube's edge. Only the corners move; the middle of every edge stays put, so nothing gets cut off.
+ */
+private const val CURVE_SRC = """
+uniform shader content;
+uniform float2 size;
+uniform float k;
+half4 main(float2 p) {
+    float2 uv = p / size * 2.0 - 1.0;
+    float2 w = uv.yx * uv.yx;
+    float2 q = uv * (1.0 + k * w);
+    if (max(abs(q.x), abs(q.y)) > 1.0) return half4(0.0, 0.0, 0.0, 1.0);
+    half4 c = content.eval((q + 1.0) * 0.5 * size);
+    float f = uv.x * uv.x * uv.y * uv.y;
+    float2 qr = clamp(uv * (1.0 + k * 1.35 * w), -1.0, 1.0);
+    float2 qb = uv * (1.0 + k * 0.7 * w);
+    c.r = mix(c.r, content.eval((qr + 1.0) * 0.5 * size).r, f);
+    c.b = mix(c.b, content.eval((qb + 1.0) * 0.5 * size).b, f);
+    float2 e = 1.0 - abs(q);
+    float v = smoothstep(0.0, 0.03 + k * 0.3, min(e.x, e.y)) * (1.0 - 0.35 * f);
+    return half4(c.rgb * v, c.a);
+}
+"""
+private val CURVE_K = floatArrayOf(0f, 0.045f, 0.1f)
+
+private fun Modifier.vhsCurve(level: Int): Modifier =
+    if (level <= 0 || android.os.Build.VERSION.SDK_INT < 33) this else composed {
+        val cache = remember { arrayOfNulls<Any>(1) }
+        var key by remember { mutableStateOf("") }
+        graphicsLayer {
+            val k = CURVE_K[level.coerceIn(0, 2)]
+            val kk = "${size.width}x${size.height}:$k"
+            if (kk != key) { cache[0] = runCatching { curveEffect(size.width, size.height, k) }.onFailure { android.util.Log.w("r95", "curve shader", it) }.getOrNull(); key = kk }
+            renderEffect = cache[0] as androidx.compose.ui.graphics.RenderEffect?
+        }
+    }
+
+@androidx.annotation.RequiresApi(33)
+private fun curveEffect(w: Float, h: Float, k: Float): androidx.compose.ui.graphics.RenderEffect {
+    val sh = android.graphics.RuntimeShader(CURVE_SRC)
+    sh.setFloatUniform("size", w, h); sh.setFloatUniform("k", k)
+    return android.graphics.RenderEffect.createRuntimeShaderEffect(sh, "content").asComposeRenderEffect()
+}
+
+/** CURVE before Android 13: rounded black tube corners and a soft shade along the edges */
+@Composable
+private fun VhsCurveCorners(level: Int) {
+    Canvas(Modifier.fillMaxSize()) {
+        val r = size.minDimension * (if (level >= 2) 0.09f else 0.05f)
+        val tube = androidx.compose.ui.graphics.Path().apply { addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size), androidx.compose.ui.geometry.CornerRadius(r, r))) }
+        clipPath(tube, androidx.compose.ui.graphics.ClipOp.Difference) { drawRect(Color.Black) }
+        drawRect(Brush.radialGradient(listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.45f)), Offset(size.width / 2, size.height / 2), size.maxDimension * 0.75f))
+    }
+}
+
 /** One glitch "frame" of the tape: shared by the CRT overlay and the picture's horizontal tearing. */
 private class Glitch(val burst: Boolean, val tearX: Float, val jitterY: Float, val kinds: Int, val amp: Float)
 private val NO_GLITCH = Glitch(false, 0f, 0f, 0, 0f)
@@ -760,6 +819,8 @@ fun VhsShell(onShutDown: () -> Unit) {
     val pic = OsPrefs.vhsPic
     val picBmp = remember(pic) { if (pic > 0) VhsBgPicture.load(ctx) else null }
     val grad = vhsGradBrush()
+    val curve = if (screen == Screen.VIDEO && deck.fullscreen) 0 else OsPrefs.vhsCurve
+    Box(Modifier.fillMaxSize().vhsCurve(curve)) {
     Box(Modifier.fillMaxSize().then(if (grad != null) Modifier.background(grad) else Modifier.background(bg))) {
       val wall = OsPrefs.vhsWall.takeIf { it < VhsWalls.names.size } ?: -1
       val tint = if (grad != null) Modifier.background(vhsGradBrush(OsPrefs.vhsPicDim)!!) else Modifier.background(bg.copy(alpha = OsPrefs.vhsPicDim))
@@ -927,6 +988,9 @@ fun VhsShell(onShutDown: () -> Unit) {
               kbHolder.value?.enter(); kbCtl?.hide(); focusMgr.clearFocus()
           }),
       )
+    }
+    // phones before Android 13 can't bend the picture: dark, rounded tube corners instead
+    if (curve > 0 && android.os.Build.VERSION.SDK_INT < 33) VhsCurveCorners(curve)
     }
 }
 
@@ -1648,6 +1712,8 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         // the help bars: always there, or sliding away after 2 s (swipe up from the bottom edge to bring them back)
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
         "CRT   " + (if (OsPrefs.vhsCrt) "ON" else "OFF") to { OsPrefs.setVhsCrt(!OsPrefs.vhsCrt) },
+        // the tube bending at the corners
+        "CURVE " + listOf("OFF", "LOW", "HIGH")[OsPrefs.vhsCurve.coerceIn(0, 2)] to { OsPrefs.setVhsCurve((OsPrefs.vhsCurve + 1) % 3) },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
         (if (OsPrefs.vhsPic > 0) "PICTURE CHANGE" else "PICTURE CHOOSE") to { pickPic.launch(arrayOf("image/*")) },

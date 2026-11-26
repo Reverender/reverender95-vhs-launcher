@@ -55,6 +55,7 @@ object OsPrefs {
         vhsPic = p.getInt("vhs_pic", 0); vhsPicDim = p.getFloat("vhs_pic_dim", 0.35f)
         vidColor = p.getFloat("vhs_vid_color", 0.45f); vidBlur = p.getFloat("vhs_vid_blur", 0.25f); vidChroma = p.getFloat("vhs_vid_chroma", 0.4f); vidNoise = p.getFloat("vhs_vid_noise", 0.3f)
         vhsChroma = p.getFloat("vhs_chroma", 0.35f); vhsTrack = p.getFloat("vhs_track", 0.5f)
+        vhsCurve = p.getInt("vhs_curve", 1)
         vhsGrad = p.getInt("vhs_grad", -1); vhsFgMix = p.getBoolean("vhs_fg_mix", false); vhsHelpAuto = p.getBoolean("vhs_help_auto", false)
         vhsSwipe = listOf("up", "down", "left", "right").associateWith { p.getString("vhs_swipe_$it", "") ?: "" }
     }
@@ -125,6 +126,9 @@ object OsPrefs {
     fun setVhsColors(bg: Long, fg: Long) { vhsBg = bg; vhsFg = fg; put { putLong("vhs_bg", bg); putLong("vhs_fg", fg) } }
     @set:JvmName("vhsCrtInternal") var vhsCrt by mutableStateOf(true); private set
     fun setVhsCrt(v: Boolean) { vhsCrt = v; put { putBoolean("vhs_crt", v) } }
+    /** VHS CRT tube curve at the corners: 0 off, 1 low, 2 high */
+    @set:JvmName("vhsCurveInternal") var vhsCurve by mutableStateOf(1); private set
+    fun setVhsCurve(v: Int) { vhsCurve = v; put { putInt("vhs_curve", v) } }
     @set:JvmName("vhs24hInternal") var vhs24h by mutableStateOf(false); private set
     fun setVhs24h(v: Boolean) { vhs24h = v; put { putBoolean("vhs_24h", v) } }
     /** VHS tape glitches (tracking noise, tearing, static, colour fringe): 0 = clean … 1 = worn-out tape */
