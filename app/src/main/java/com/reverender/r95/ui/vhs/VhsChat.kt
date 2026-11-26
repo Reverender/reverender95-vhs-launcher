@@ -6,7 +6,10 @@ import android.content.Context
 import android.service.notification.StatusBarNotification
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -166,12 +169,25 @@ internal object VhsChats {
     /** WhatsApp itself: in this chat if its notification is still there, else the app */
     fun openApp(ctx: Context, key: String?) {
         val pi = key?.let { tapIntent[it] }
-        if (pi != null && runCatching { pi.send() }.isSuccess) return
+        if (pi != null) {
+            // Android 14+: a notification's tap action may only start WhatsApp's screen when we say so
+            val opts = android.app.ActivityOptions.makeBasic()
+            if (android.os.Build.VERSION.SDK_INT >= 34) opts.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            if (runCatching { pi.send(ctx, 0, null, null, null, null, opts.toBundle()) }.onFailure { android.util.Log.w("r95", "chat open", it) }.isSuccess) return
+        }
+        // the app (found among the installed apps: package visibility hides it from a plain lookup)
+        val app = com.reverender.r95.os.Launcher.apps.firstOrNull { it.component.packageName in PKGS }
+        if (app != null) { com.reverender.r95.os.Launcher.launch(ctx, app, fullScreen = true); return }
         val li = PKGS.firstNotNullOfOrNull { ctx.packageManager.getLaunchIntentForPackage(it) } ?: return
         runCatching { ctx.startActivity(li.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
-    fun delete(ctx: Context, key: String) { chats.removeAll { it.key == key }; save(ctx) }
+    /** swiped away: off the list (it comes back with the next message), and WhatsApp's notification marked read */
+    fun dismiss(ctx: Context, key: String) {
+        markRead.remove(key)?.let { a -> runCatching { a.actionIntent.send() } }
+        chats.removeAll { it.key == key }; reply.remove(key); tapIntent.remove(key); replyReady++
+        save(ctx)
+    }
 }
 
 /** text cut into lines of at most [w] characters, broken between words */
@@ -224,7 +240,21 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
             VhsText("COME IN HERE", color = o.fg.copy(alpha = 0.7f))
         }
         for (c in chats) {
-            Column(Modifier.fillMaxWidth().pointerInput(c.key) { detectTapGestures { Haptics.tick(); VhsChats.open = c.key; VhsChats.seen(ctx, c.key) } }) {
+            // swipe a chat left or right to dismiss it (it slides away and fades); tap to open it
+            var dx by remember(c.key) { mutableStateOf(0f) }
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+            Column(Modifier.fillMaxWidth()
+                .graphicsLayer { translationX = dx; alpha = (1f - kotlin.math.abs(dx) / size.width).coerceIn(0f, 1f) }
+                .pointerInput(c.key) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (kotlin.math.abs(dx) > size.width * 0.3f) { Haptics.clunk("eject"); VhsChats.dismiss(ctx, c.key) }
+                            else scope.launch { androidx.compose.animation.core.animate(dx, 0f) { v, _ -> dx = v } }
+                        },
+                        onDragCancel = { dx = 0f },
+                    ) { ch, d -> ch.consume(); dx += d }
+                }
+                .pointerInput(c.key) { detectTapGestures { Haptics.tick(); VhsChats.open = c.key; VhsChats.seen(ctx, c.key) } }) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(vhsSafe(c.name).trim().take(if (c.unread > 0) 16 else 21), invert = c.unread > 0)
                     Spacer(Modifier.weight(1f))
@@ -239,7 +269,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
     }
     Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onExit() } }) {
         Column {
-            VhsText("TAP A CHAT TO OPEN IT", invert = true)
+            VhsText("TAP CHAT  SWIPE: REMOVE", invert = true)
             VhsText("TAP HERE TO RETURN", invert = true)
         }
     }
