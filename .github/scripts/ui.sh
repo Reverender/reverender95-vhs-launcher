@@ -28,7 +28,7 @@ adb logcat -d | grep "r95 *: swipe" | tail -5
 # swipe the first chat away
 adb shell input swipe $((W*20/100)) $((H*155/1000)) $((W*90/100)) $((H*155/1000)) 250; sleep 2
 timeout 20 adb exec-out screencap -p > "$OUT/N4b-chat-dismissed.png"
-adb shell input tap $((W/3)) $((H*25/100)); sleep 3
+adb shell input tap $((W/3)) $((H*155/1000)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
 # type a reply: the keyboard comes up and the reply line moves above it
 adb shell input tap $((W/3)) $((H*88/100)); sleep 2
