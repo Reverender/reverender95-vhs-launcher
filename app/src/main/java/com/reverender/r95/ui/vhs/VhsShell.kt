@@ -609,7 +609,7 @@ private class GlitchSched {
 
 /** Scanlines, vignette, a rolling bright band, and the tape glitches: tracking noise, static, colour fringe, head-switch noise. */
 @Composable
-private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: GlitchSched, track: Float, sn: Float = OsPrefs.vhsSnow, ln: Float = OsPrefs.vhsLines) {
+private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: GlitchSched, track: Float, sn: Float = OsPrefs.vhsSnow, ln: Float = OsPrefs.vhsLines, sc: Float = OsPrefs.vhsScan) {
     val scan = remember {
         val b = android.graphics.Bitmap.createBitmap(1, 3, android.graphics.Bitmap.Config.ARGB_8888)
         b.setPixel(0, 2, 0x55000000); b.setPixel(0, 1, 0x14000000)
@@ -629,8 +629,8 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
         val now = clock.longValue
         val fr = java.util.Random(now / 66 * 31)
         // interlace twitter: the scanlines sit one line lower on every other field
-        // LINES: scanlines (with interlace twitter)
-        if (ln > 0f) { if ((now / 66) % 2L == 0L) drawRect(scan, alpha = (ln * 1.4f).coerceAtMost(1f)) else translate(top = 1f) { drawRect(scan, alpha = (ln * 1.4f).coerceAtMost(1f)) } }
+        // SCANLINES (with interlace twitter)
+        if (sc > 0f) { val a = (sc * 1.4f).coerceAtMost(1f); if ((now / 66) % 2L == 0L) drawRect(scan, alpha = a) else translate(top = 1f) { drawRect(scan, alpha = a) } }
         // SNOW: analog snow, drop-outs and specks
         if (sn > 0f) {
             snowM.setTranslate(fr.nextFloat() * 96f, fr.nextFloat() * 96f); snowShader.setLocalMatrix(snowM)
@@ -775,7 +775,7 @@ fun VhsShell(onShutDown: () -> Unit) {
     // the video deck stays loaded while you go home and back; released with the shell
     val deck = remember { VideoDeck() }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { deck.release() } }
-    val crt = (OsPrefs.vhsGlitch > 0f || OsPrefs.vhsSnow > 0f || OsPrefs.vhsLines > 0f) && !VhsCrtGate.off
+    val crt = (OsPrefs.vhsGlitch > 0f || OsPrefs.vhsSnow > 0f || OsPrefs.vhsLines > 0f || OsPrefs.vhsScan > 0f) && !VhsCrtGate.off
     LaunchedEffect(crt) {
         if (!crt) return@LaunchedEffect
         while (true) {
@@ -1723,9 +1723,9 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
         // the CRT look: set with the SNOW / GLITCH / LINES / CURVE sliders under this row; tapping it switches
         // the first three all off, or back to their defaults
-        "CRT   " + (if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines > 0f) "EFFECTS" else "OFF") to {
-            if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines > 0f) { OsPrefs.setVhsSnow(0f); OsPrefs.setVhsGlitch(0f); OsPrefs.setVhsLines(0f) }
-            else { OsPrefs.setVhsSnow(0.5f); OsPrefs.setVhsGlitch(0.5f); OsPrefs.setVhsLines(0.6f) }
+        "CRT   " + (if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines + OsPrefs.vhsScan > 0f) "EFFECTS" else "OFF") to {
+            if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines + OsPrefs.vhsScan > 0f) { OsPrefs.setVhsSnow(0f); OsPrefs.setVhsGlitch(0f); OsPrefs.setVhsLines(0f); OsPrefs.setVhsScan(0f) }
+            else { OsPrefs.setVhsSnow(0.5f); OsPrefs.setVhsGlitch(0.5f); OsPrefs.setVhsLines(0.6f); OsPrefs.setVhsScan(0.7f) }
         },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
@@ -1812,7 +1812,16 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                     Spacer(Modifier.width(pxDp(2f)))
                     VhsText((OsPrefs.vhsGlitch * 100).roundToInt().toString().padStart(3))
                 }
-                // LINES: scanlines, the rolling bright band, the head-switching strip at the bottom
+                // SCAN: the scanlines
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    VhsText(" ")
+                    VhsText("SCAN  ")
+                    Spacer(Modifier.width(pxDp(2f)))
+                    Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsScan, slider = true) { OsPrefs.setVhsScan(it) } }
+                    Spacer(Modifier.width(pxDp(2f)))
+                    VhsText((OsPrefs.vhsScan * 100).roundToInt().toString().padStart(3))
+                }
+                // LINES: artifact lines: the rolling bright band, the head-switching strip at the bottom
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(" ")
                     VhsText("LINES ")

@@ -44,9 +44,9 @@ object OsPrefs {
         textScale = p.getFloat("text_scale", 1.12f)
         vhsBg = p.getLong("vhs_bg", 0xFF1A1AD0); vhsFg = p.getLong("vhs_fg", 0xFFFFFFFF)
         vhsCrt = p.getBoolean("vhs_crt", true); vhs24h = p.getBoolean("vhs_24h", false)
-        vhsGlitch = p.getFloat("vhs_glitch", 0.5f); vhsSnow = p.getFloat("vhs_snow", 0.5f); vhsLines = p.getFloat("vhs_lines", 0.6f)
+        vhsGlitch = p.getFloat("vhs_glitch", 0.5f); vhsSnow = p.getFloat("vhs_snow", 0.5f); vhsLines = p.getFloat("vhs_lines", 0.6f); vhsScan = p.getFloat("vhs_scan", 0.7f)
         // the old CRT ON/OFF switch was off: start the three CRT sliders at 0
-        if (!vhsCrt && !p.contains("vhs_snow")) { vhsGlitch = 0f; vhsSnow = 0f; vhsLines = 0f; vhsCrt = true }
+        if (!vhsCrt && !p.contains("vhs_snow")) { vhsGlitch = 0f; vhsSnow = 0f; vhsLines = 0f; vhsScan = 0f; vhsCrt = true }
         vhsBlur = p.getFloat("vhs_blur", 0.35f); vhsBloom = p.getBoolean("vhs_bloom", true)
         runCatching {
             val a = org.json.JSONArray(p.getString("vhs_playlist", "[]"))
@@ -209,7 +209,10 @@ object OsPrefs {
     /** VHS CRT: analog snow, specks and tape drop-outs (0 … 1) */
     @set:JvmName("vhsSnowInternal") var vhsSnow by mutableStateOf(0.5f); private set
     fun setVhsSnow(v: Float) { vhsSnow = v.coerceIn(0f, 1f); put { putFloat("vhs_snow", vhsSnow) } }
-    /** VHS CRT: scanlines, the rolling bright band and the head-switching strip at the bottom (0 … 1) */
+    /** VHS CRT: the scanlines (0 … 1) */
+    @set:JvmName("vhsScanInternal") var vhsScan by mutableStateOf(0.7f); private set
+    fun setVhsScan(v: Float) { vhsScan = v.coerceIn(0f, 1f); put { putFloat("vhs_scan", vhsScan) } }
+    /** VHS CRT: artifact lines: the rolling bright band and the head-switching strip at the bottom (0 … 1) */
     @set:JvmName("vhsLinesInternal") var vhsLines by mutableStateOf(0.6f); private set
     fun setVhsLines(v: Float) { vhsLines = v.coerceIn(0f, 1f); put { putFloat("vhs_lines", vhsLines) } }
     fun setVhsGlitch(v: Float) { vhsGlitch = v.coerceIn(0f, 1f); put { putFloat("vhs_glitch", vhsGlitch) } }
