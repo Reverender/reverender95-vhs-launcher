@@ -34,7 +34,7 @@ timeout 20 adb shell am force-stop $VPKG; timeout 20 adb shell am start -n "$VPK
 timeout 10 adb shell input tap $((W*90/100)) $((H*30/100)); sleep 2
 echo "after right tap: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)"
 timeout 10 adb shell input swipe $((W*78/100)) $((H*55/100)) $((W*78/100)) $((H*55/100)) 900; sleep 3
-echo "after clock hold: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)""; adb logcat -d | grep "r95 *: clock" | tail -2
+echo "after clock hold: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)"; adb logcat -d | grep "r95 *: clock" | tail -2
 # wide screen: rotate to landscape — home menu + LOAD side by side, nothing cut off
 timeout 10 adb shell settings put system accelerometer_rotation 0
 timeout 10 adb shell settings put system user_rotation 1; sleep 5
