@@ -609,7 +609,7 @@ private class GlitchSched {
 
 /** Scanlines, vignette, a rolling bright band, and the tape glitches: tracking noise, static, colour fringe, head-switch noise. */
 @Composable
-private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: GlitchSched, track: Float) {
+private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: GlitchSched, track: Float, sn: Float = OsPrefs.vhsSnow, ln: Float = OsPrefs.vhsLines) {
     val scan = remember {
         val b = android.graphics.Bitmap.createBitmap(1, 3, android.graphics.Bitmap.Config.ARGB_8888)
         b.setPixel(0, 2, 0x55000000); b.setPixel(0, 1, 0x14000000)
@@ -629,14 +629,16 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
         val now = clock.longValue
         val fr = java.util.Random(now / 66 * 31)
         // interlace twitter: the scanlines sit one line lower on every other field
-        if ((now / 66) % 2L == 0L) drawRect(scan) else translate(top = 1f) { drawRect(scan) }
-        if (g > 0f) {
+        // LINES: scanlines (with interlace twitter)
+        if (ln > 0f) { if ((now / 66) % 2L == 0L) drawRect(scan, alpha = (ln * 1.4f).coerceAtMost(1f)) else translate(top = 1f) { drawRect(scan, alpha = (ln * 1.4f).coerceAtMost(1f)) } }
+        // SNOW: analog snow, drop-outs and specks
+        if (sn > 0f) {
             snowM.setTranslate(fr.nextFloat() * 96f, fr.nextFloat() * 96f); snowShader.setLocalMatrix(snowM)
-            drawRect(snow, alpha = 0.10f + 0.22f * g, blendMode = BlendMode.Plus)
+            drawRect(snow, alpha = 0.44f * sn + 0.2f * sn * sn, blendMode = BlendMode.Plus)
             // AGC breathing: the picture brightness pumps very slightly
-            drawRect(Color.Black.copy(alpha = 0.012f + 0.03f * g * fr.nextFloat()))
+            drawRect(Color.Black.copy(alpha = 0.012f + 0.06f * sn * fr.nextFloat()))
             // tape drop-outs: a short white streak where the oxide is worn
-            if (fr.nextFloat() < 0.04f + 0.18f * g) repeat(1 + fr.nextInt(2)) {
+            if (fr.nextFloat() < 0.36f * sn) repeat(1 + fr.nextInt(2)) {
                 val y = fr.nextFloat() * size.height
                 val x = fr.nextFloat() * size.width
                 val w = px * (4f + fr.nextFloat() * 30f)
@@ -644,16 +646,18 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
                 drawRect(Color.White.copy(alpha = 0.18f), Offset(x + w, y), Size(w * 0.6f, 1f))
             }
         }
-        val roll = ((now % 7000) / 7000f) * (size.height * 1.3f) - size.height * 0.15f
-        val bandA = 0.05f + 0.07f * g
-        drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = bandA), Color.Transparent), roll - 60f, roll + 60f), Offset(0f, roll - 60f), Size(size.width, 120f))
-        if (g > 0f) {
-            val rnd = java.util.Random(now / 66)
-            // static: a few loose specks all the time on a worn tape
-            repeat((g * g * 70).toInt()) {
-                drawRect(Color.White.copy(alpha = 0.15f + rnd.nextFloat() * 0.45f), Offset(rnd.nextFloat() * size.width, rnd.nextFloat() * size.height), Size(1f + rnd.nextFloat() * px, 1f + rnd.nextFloat() * px * 0.5f))
-            }
+        val rnd = java.util.Random(now / 66)
+        // static: loose specks (SNOW)
+        if (sn > 0f) repeat((sn * sn * 140).toInt()) {
+            drawRect(Color.White.copy(alpha = 0.15f + rnd.nextFloat() * 0.45f), Offset(rnd.nextFloat() * size.width, rnd.nextFloat() * size.height), Size(1f + rnd.nextFloat() * px, 1f + rnd.nextFloat() * px * 0.5f))
+        }
+        if (ln > 0f) {
+            // the rolling bright band (LINES)
+            val roll = ((now % 7000) / 7000f) * (size.height * 1.3f) - size.height * 0.15f
+            val bandA = 0.16f * ln
+            drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = bandA), Color.Transparent), roll - 60f, roll + 60f), Offset(0f, roll - 60f), Size(size.width, 120f))
             // head-switching noise: the ragged strip at the very bottom of a VHS picture
+            val g = ln
             val hs = px * (1f + 3f * g)
             val y0 = size.height - hs
             var x = 0f
@@ -662,6 +666,8 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
                 drawRect(Color.White.copy(alpha = (0.06f + rnd.nextFloat() * 0.3f) * (0.4f + g)), Offset(x, y0 + rnd.nextFloat() * hs * 0.6f), Size(w, 1f + rnd.nextFloat() * hs * 0.5f))
                 x += w + rnd.nextFloat() * px * 6f
             }
+        }
+        if (g > 0f) {
             val gl = sched.at(now, px, track)
             if (gl.burst) {
                 val br = java.util.Random(sched.seed + now / 66)
@@ -769,7 +775,7 @@ fun VhsShell(onShutDown: () -> Unit) {
     // the video deck stays loaded while you go home and back; released with the shell
     val deck = remember { VideoDeck() }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { deck.release() } }
-    val crt = OsPrefs.vhsCrt && !VhsCrtGate.off
+    val crt = (OsPrefs.vhsGlitch > 0f || OsPrefs.vhsSnow > 0f || OsPrefs.vhsLines > 0f) && !VhsCrtGate.off
     LaunchedEffect(crt) {
         if (!crt) return@LaunchedEffect
         while (true) {
@@ -1715,7 +1721,12 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         },
         // the help bars: always there, or sliding away after 2 s (swipe up from the bottom edge to bring them back)
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
-        "CRT   " + (if (OsPrefs.vhsCrt) "ON" else "OFF") to { OsPrefs.setVhsCrt(!OsPrefs.vhsCrt) },
+        // the CRT look: set with the SNOW / GLITCH / LINES / CURVE sliders under this row; tapping it switches
+        // the first three all off, or back to their defaults
+        "CRT   " + (if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines > 0f) "EFFECTS" else "OFF") to {
+            if (OsPrefs.vhsGlitch + OsPrefs.vhsSnow + OsPrefs.vhsLines > 0f) { OsPrefs.setVhsSnow(0f); OsPrefs.setVhsGlitch(0f); OsPrefs.setVhsLines(0f) }
+            else { OsPrefs.setVhsSnow(0.5f); OsPrefs.setVhsGlitch(0.5f); OsPrefs.setVhsLines(0.6f) }
+        },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
         (if (OsPrefs.vhsPic > 0) "PICTURE CHANGE" else "PICTURE CHOOSE") to { pickPic.launch(arrayOf("image/*")) },
@@ -1783,14 +1794,32 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                 }
             }
             if (label.startsWith("CRT ")) {
-                // GLITCH: how worn the tape looks (tracking noise, tearing, static, colour fringe); needs CRT on
+                // SNOW: analog snow, loose specks, tape drop-outs
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(" ")
-                    VhsText("GLITCH", color = if (OsPrefs.vhsCrt) null else o.fg.copy(alpha = 0.5f))
+                    VhsText("SNOW  ")
+                    Spacer(Modifier.width(pxDp(2f)))
+                    Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsSnow, slider = true) { OsPrefs.setVhsSnow(it) } }
+                    Spacer(Modifier.width(pxDp(2f)))
+                    VhsText((OsPrefs.vhsSnow * 100).roundToInt().toString().padStart(3))
+                }
+                // GLITCH: tape glitches (tearing, tracking noise bands, colour slip, picture jumps): how often and how hard
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    VhsText(" ")
+                    VhsText("GLITCH")
                     Spacer(Modifier.width(pxDp(2f)))
                     Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsGlitch, slider = true) { OsPrefs.setVhsGlitch(it) } }
                     Spacer(Modifier.width(pxDp(2f)))
                     VhsText((OsPrefs.vhsGlitch * 100).roundToInt().toString().padStart(3))
+                }
+                // LINES: scanlines, the rolling bright band, the head-switching strip at the bottom
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    VhsText(" ")
+                    VhsText("LINES ")
+                    Spacer(Modifier.width(pxDp(2f)))
+                    Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsLines, slider = true) { OsPrefs.setVhsLines(it) } }
+                    Spacer(Modifier.width(pxDp(2f)))
+                    VhsText((OsPrefs.vhsLines * 100).roundToInt().toString().padStart(3))
                 }
                 // CURVE: how much the tube bends towards the corners (0 = flat screen)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

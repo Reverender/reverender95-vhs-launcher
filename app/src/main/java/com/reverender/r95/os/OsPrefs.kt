@@ -44,7 +44,10 @@ object OsPrefs {
         textScale = p.getFloat("text_scale", 1.12f)
         vhsBg = p.getLong("vhs_bg", 0xFF1A1AD0); vhsFg = p.getLong("vhs_fg", 0xFFFFFFFF)
         vhsCrt = p.getBoolean("vhs_crt", true); vhs24h = p.getBoolean("vhs_24h", false)
-        vhsGlitch = p.getFloat("vhs_glitch", 0.5f); vhsBlur = p.getFloat("vhs_blur", 0.35f); vhsBloom = p.getBoolean("vhs_bloom", true)
+        vhsGlitch = p.getFloat("vhs_glitch", 0.5f); vhsSnow = p.getFloat("vhs_snow", 0.5f); vhsLines = p.getFloat("vhs_lines", 0.6f)
+        // the old CRT ON/OFF switch was off: start the three CRT sliders at 0
+        if (!vhsCrt && !p.contains("vhs_snow")) { vhsGlitch = 0f; vhsSnow = 0f; vhsLines = 0f; vhsCrt = true }
+        vhsBlur = p.getFloat("vhs_blur", 0.35f); vhsBloom = p.getBoolean("vhs_bloom", true)
         runCatching {
             val a = org.json.JSONArray(p.getString("vhs_playlist", "[]"))
             for (i in 0 until a.length()) a.optJSONObject(i)?.let { o -> vhsPlaylist.add(o.optString("n") to o.optString("u")) }
@@ -203,6 +206,12 @@ object OsPrefs {
     /** VHS help bars: false = always shown, true = slide away after 2 s (swipe up from the bottom brings them back) */
     @set:JvmName("vhsHelpAutoInternal") var vhsHelpAuto by mutableStateOf(false); private set
     fun setVhsHelpAuto(v: Boolean) { vhsHelpAuto = v; put { putBoolean("vhs_help_auto", v) } }
+    /** VHS CRT: analog snow, specks and tape drop-outs (0 … 1) */
+    @set:JvmName("vhsSnowInternal") var vhsSnow by mutableStateOf(0.5f); private set
+    fun setVhsSnow(v: Float) { vhsSnow = v.coerceIn(0f, 1f); put { putFloat("vhs_snow", vhsSnow) } }
+    /** VHS CRT: scanlines, the rolling bright band and the head-switching strip at the bottom (0 … 1) */
+    @set:JvmName("vhsLinesInternal") var vhsLines by mutableStateOf(0.6f); private set
+    fun setVhsLines(v: Float) { vhsLines = v.coerceIn(0f, 1f); put { putFloat("vhs_lines", vhsLines) } }
     fun setVhsGlitch(v: Float) { vhsGlitch = v.coerceIn(0f, 1f); put { putFloat("vhs_glitch", vhsGlitch) } }
     /** swipe up/down/left/right → "" | "vhs:setup" | "vhs:search" | "pkg:<component>" */
     @set:JvmName("vhsSwipeInternal") var vhsSwipe by mutableStateOf(mapOf<String, String>()); private set
