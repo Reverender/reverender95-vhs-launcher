@@ -1,13 +1,13 @@
 screen 320 x 640
-11-26 20:16:18.713  6142  6142 I r95     : swipe: used by a control
-notif pid: 6142
-11-26 20:16:18.009  6273  6273 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 20:16:18.034  6273  6273 I AndroidRuntime: Using default boot image
-11-26 20:16:18.034  6273  6273 I AndroidRuntime: Leaving lock profiling enabled
-11-26 20:16:18.414  6273  6273 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 20:16:18.715  6273  6273 D AndroidRuntime: Shutting down VM
-11-26 20:16:22.595  6292  6292 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 20:16:22.597  6292  6292 I AndroidRuntime: Using default boot image
-11-26 20:16:22.597  6292  6292 I AndroidRuntime: Leaving lock profiling enabled
-11-26 20:16:22.665  6292  6292 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 20:16:22.672  6292  6292 D AndroidRuntime: Shutting down VM
+11-26 20:28:53.569  6290  6290 I r95     : swipe: used by a control
+notif pid: 6290
+11-26 20:28:52.928  6435  6435 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 20:28:52.934  6435  6435 I AndroidRuntime: Using default boot image
+11-26 20:28:52.934  6435  6435 I AndroidRuntime: Leaving lock profiling enabled
+11-26 20:28:53.316  6435  6435 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 20:28:53.570  6435  6435 D AndroidRuntime: Shutting down VM
+11-26 20:28:59.521  6520  6520 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 20:28:59.535  6520  6520 I AndroidRuntime: Using default boot image
+11-26 20:28:59.535  6520  6520 I AndroidRuntime: Leaving lock profiling enabled
+11-26 20:28:59.636  6520  6520 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 20:28:59.654  6520  6520 D AndroidRuntime: Shutting down VM
