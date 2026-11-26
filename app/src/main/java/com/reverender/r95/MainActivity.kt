@@ -147,6 +147,12 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         intent?.getIntExtra("r95_vhs_wall", -2)?.takeIf { it >= -1 }?.let { com.reverender.r95.os.OsPrefs.setVhsWall(it) }
         intent?.getIntExtra("r95_vhs_viz", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsVizTheme(it) }
         intent?.getIntExtra("r95_vhs_font", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsFont(it) }
+        // --ei r95_vhs_grad N (-1 off) / --ez r95_vhs_mix true: multicolour background / pastel text
+        intent?.getIntExtra("r95_vhs_grad", -2)?.takeIf { it >= -1 }?.let { g ->
+            com.reverender.r95.os.OsPrefs.setVhsGrad(g)
+            if (g >= 0) com.reverender.r95.os.OsPrefs.setVhsColors(com.reverender.r95.ui.vhs.VHS_GRADS[g].second.first(), com.reverender.r95.os.OsPrefs.vhsFg)
+        }
+        if (intent?.hasExtra("r95_vhs_mix") == true) com.reverender.r95.os.OsPrefs.setVhsFgMix(intent!!.getBooleanExtra("r95_vhs_mix", false))
         com.reverender.r95.os.GyroWarp.refresh()
         askForNotifications()
         setContent {

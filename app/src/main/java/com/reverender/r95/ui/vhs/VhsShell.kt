@@ -109,7 +109,21 @@ internal val VHS_COLORS = listOf(
 internal val VHS_TEXT = listOf(
     "WHITE" to 0xFFFFFFFF, "YELLOW" to 0xFFFFF04A, "GREEN" to 0xFF39FF14, "CYAN" to 0xFF5CF6FF, "AMBER" to 0xFFFFB000,
     "PINK" to 0xFFFF6EC7, "BLACK" to 0xFF000000, "BLUE" to 0xFF1A1AD0,
+    // vaporwave / mallsoft pastels
+    "MALL PINK" to 0xFFFFB3DE, "MINT" to 0xFF9FFFE0, "LAVENDER" to 0xFFC9A0FF, "PEACH" to 0xFFFFCBA4, "SKY" to 0xFF9BE7FF, "PLUM" to 0xFF3A1F5D,
 )
+/** multicolour backgrounds (top to bottom); the first colour also stands in as the plain background colour */
+internal val VHS_GRADS = listOf(
+    "MALLSOFT" to listOf(0xFFFFB3DE, 0xFFC9A0FF, 0xFF9FFFE0),
+    "VAPORWAVE" to listOf(0xFFFF6EC7, 0xFF7A5CFF, 0xFF29F3FF),
+    "PLAZA" to listOf(0xFF3A1F5D, 0xFF7A4A8F, 0xFFF7B7D2),
+    "MIAMI" to listOf(0xFF2DE2E6, 0xFF8A5CFF, 0xFFFF3CAC),
+    "SUNSET" to listOf(0xFFFFD319, 0xFFFF2975, 0xFF8C1EFF),
+    "SEAPUNK" to listOf(0xFF00FFD1, 0xFF3D7BFF, 0xFF8A2BE2),
+)
+/** PASTEL MIX text: letter by letter through these */
+internal val VHS_MIX = listOf(Color(0xFFFFB3DE), Color(0xFF9FFFE0), Color(0xFFC9A0FF), Color(0xFFFFCBA4), Color(0xFF9BE7FF), Color(0xFFFFF5A8))
+internal fun vhsGradBrush(alpha: Float = 1f): Brush? = VHS_GRADS.getOrNull(OsPrefs.vhsGrad)?.second?.let { cs -> Brush.verticalGradient(cs.map { Color(it.toInt()).copy(alpha = alpha) }) }
 /** the four "broadcast standard" presets: background + text */
 private val STANDARDS = listOf(
     "AUTO" to (0xFF1A1AD0 to 0xFFFFFFFF), "PAL" to (0xFF050505 to 0xFF39FF14),
@@ -214,11 +228,14 @@ internal fun DrawScope.drawGlyphs(text: String, x0: Float, y0: Float, px: Float,
     val style = OsPrefs.vhsFont
     // the pixel each style is built from
     val dot = when (style) { 5 -> Size(px, px * 0.42f); 6 -> Size(px * 0.6f, px); else -> Size(px, px) }
+    // PASTEL MIX: ordinary text (in the TEXT colour) goes letter by letter through the pastels
+    val mix = OsPrefs.vhsFgMix && ink.value == Color(OsPrefs.vhsFg.toInt()).value
+    var n = 0
     for (pass in 0..1) {
         if (pass == 0 && shadow == null) continue
-        val col = if (pass == 0) shadow!! else ink
         val off = if (pass == 0) px * 0.6f else 0f
         text.forEachIndexed { i, c ->
+            val col = if (pass == 0) shadow!! else if (mix) (if (c == ' ') ink else VHS_MIX[n++ % VHS_MIX.size]) else ink
             val rows = VhsFont.rows(c) ?: return@forEachIndexed
             val gx = x0 + i * 6 * px + off
             for (r in 0 until 7) {
@@ -666,8 +683,10 @@ fun VhsShell(onShutDown: () -> Unit) {
     LaunchedEffect(kbHolder.value) { if (kbHolder.value == null) { kbCtl?.hide(); focusMgr.clearFocus() } }
     @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     val imeNow by androidx.compose.runtime.rememberUpdatedState(WindowInsets.isImeVisible)
-    // the help bars at the bottom slide away after 2 s; a new screen, or a swipe up from the bottom edge, brings them back
-    LaunchedEffect(Unit) {
+    // the help bars at the bottom stay put; with SETUP's HELP AUTO they slide away after 2 s, and a new screen or a
+    // swipe up from the bottom edge brings them back
+    LaunchedEffect(OsPrefs.vhsHelpAuto) {
+        if (!OsPrefs.vhsHelpAuto) { VhsHint.shown = true; return@LaunchedEffect }
         androidx.compose.runtime.snapshotFlow { VhsHint.pokes }.collectLatest { VhsHint.shown = true; delay(2000); VhsHint.shown = false }
     }
 
@@ -699,12 +718,12 @@ fun VhsShell(onShutDown: () -> Unit) {
             delay(66)
         }
     }
-    // the apps drawer: slides in from the right while you swipe left (0 = closed … 1 = open)
+    // the apps drawer: fades in on a swipe up (0 = closed … 1 = open)
     var drawerP by remember { mutableFloatStateOf(0f) }
     val drawerScope = androidx.compose.runtime.rememberCoroutineScope()
     fun settleDrawer(open: Boolean, velocity: Float = 0f) {
         drawerScope.launch {
-            androidx.compose.animation.core.animate(drawerP, if (open) 1f else 0f, velocity, androidx.compose.animation.core.spring(stiffness = 500f, dampingRatio = 0.9f)) { v, _ -> drawerP = v }
+            androidx.compose.animation.core.animate(drawerP, if (open) 1f else 0f, 0f, androidx.compose.animation.core.tween(if (open) 220 else 260)) { v, _ -> drawerP = v }
         }
     }
     // only these yes/no facts reach the shell, so sliding the drawer doesn't rebuild the whole screen every frame
@@ -726,15 +745,17 @@ fun VhsShell(onShutDown: () -> Unit) {
     // background and CRT cover the whole screen (status bar / cutout area too); the menu sits in the safe area
     val pic = OsPrefs.vhsPic
     val picBmp = remember(pic) { if (pic > 0) VhsBgPicture.load(ctx) else null }
-    Box(Modifier.fillMaxSize().background(bg)) {
-      val wall = OsPrefs.vhsWall
+    val grad = vhsGradBrush()
+    Box(Modifier.fillMaxSize().then(if (grad != null) Modifier.background(grad) else Modifier.background(bg))) {
+      val wall = OsPrefs.vhsWall.takeIf { it < VhsWalls.names.size } ?: -1
+      val tint = if (grad != null) Modifier.background(vhsGradBrush(OsPrefs.vhsPicDim)!!) else Modifier.background(bg.copy(alpha = OsPrefs.vhsPicDim))
       if (wall >= 0) {
           VhsWallpaper(wall, Modifier.fillMaxSize())
-          Box(Modifier.fillMaxSize().background(bg.copy(alpha = OsPrefs.vhsPicDim)))
+          Box(Modifier.fillMaxSize().then(tint))
       } else if (picBmp != null) {
           // own picture: under the menu and the CRT, tinted with the background colour so the text stays readable
           androidx.compose.foundation.Image(picBmp, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-          Box(Modifier.fillMaxSize().background(bg.copy(alpha = OsPrefs.vhsPicDim)))
+          Box(Modifier.fillMaxSize().then(tint))
       }
       // the phone keyboard slides over the bottom instead of shrinking the menu
       BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.displayCutout.only(androidx.compose.foundation.layout.WindowInsetsSides.Horizontal))).padding(top = 4.dp)) {
@@ -768,35 +789,27 @@ fun VhsShell(onShutDown: () -> Unit) {
                             val down = awaitFirstDown(requireUnconsumed = false)
                             var end = down.position
                             var used = false
-                            var dragging = false
                             val vt = androidx.compose.ui.input.pointer.util.VelocityTracker()
                             while (true) {
                                 val ev = awaitPointerEvent()
                                 val c = ev.changes.firstOrNull { it.id == down.id } ?: break
-                                if (c.isConsumed && !dragging) used = true
+                                if (c.isConsumed) used = true
                                 end = c.position
                                 vt.addPosition(c.uptimeMillis, c.position)
                                 val ddx = end.x - down.position.x; val ddy = end.y - down.position.y
-                                // swipe left on the menu: the apps drawer follows the finger
-                                if (!dragging && !used && screen == Screen.MAIN && ddx < -slop * 2 && kotlin.math.abs(ddx) > kotlin.math.abs(ddy) * 1.3f) dragging = true
-                                if (dragging) { drawerP = (-ddx / widthPx).coerceIn(0f, 1f); c.consume() }
                                 if (!c.pressed) break
-                            }
-                            if (dragging) {
-                                val vx = vt.calculateVelocity().x
-                                settleDrawer(vx < -600f || (drawerP > 0.35f && vx < 600f), -vx / widthPx)
-                                return@awaitEachGesture
                             }
                             if (used) return@awaitEachGesture
                             val dx = end.x - down.position.x; val dy = end.y - down.position.y
                             val dir = when {
                                 kotlin.math.abs(dy) > min && kotlin.math.abs(dy) > kotlin.math.abs(dx) * 1.4f -> if (dy < 0) "up" else "down"
-                                kotlin.math.abs(dx) > min && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.4f && dx > 0 -> "right"
+                                kotlin.math.abs(dx) > min && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.4f -> if (dx > 0) "right" else "left"
                                 else -> null
                             } ?: return@awaitEachGesture
-                            // swipe up from the bottom edge: bring the help bar back (the keyboard opens by tapping a search line)
+                            // swipe up: the apps drawer (with the help bar on auto-hide, from the bottom edge it brings the help back)
                             if (dir == "up") {
-                                if (down.position.y > size.height * 0.8f) { VhsHint.poke(); Haptics.tick() }
+                                if (OsPrefs.vhsHelpAuto && !VhsHint.shown && down.position.y > size.height * 0.8f) { VhsHint.poke(); Haptics.tick() }
+                                else if (screen == Screen.MAIN) { Haptics.tick(); settleDrawer(true) }
                                 return@awaitEachGesture
                             }
                             // swipe down: the phone's notification shade, on every VHS screen
@@ -839,7 +852,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                     }
                 } else Page(screen, "")
             }
-            if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onDrag = { dx -> drawerP = (drawerP - dx / widthPx).coerceIn(0f, 1f) }, onSettle = { v -> settleDrawer(drawerP > 0.65f && v < 600f, -v / widthPx) }, onClose = { settleDrawer(false) })
+            if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onClose = { settleDrawer(false) })
         }
       }
       if (crt) CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsCrt(clock, g, sched, track) }
@@ -1004,7 +1017,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         // ---- the hint bar
         Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onMenu() } }) {
             Column {
-                VhsText("▲HELP ▼NOTIF ◀APPS", invert = true)
+                VhsText("▲APPS ▼NOTIF ◀▶SWIPE", invert = true)
                 VhsText("TAP HERE FOR SETUP", invert = true)
             }
         }
@@ -1541,26 +1554,28 @@ private fun lerpC(a: Color, b: Color, t: Float): Color { val k = t.coerceIn(0f, 
 // ---------------------------------------------------------------- SETUP
 
 /** a ready-made look: background, text, 3D wallpaper (-1 none), visualizer look, tape wear, colour fringe */
-private class VhsTheme(val name: String, val bg: Long, val fg: Long, val wall: Int, val viz: Int, val glitch: Float, val chroma: Float) {
-    fun matches() = OsPrefs.vhsBg == bg && OsPrefs.vhsFg == fg && OsPrefs.vhsWall == wall && OsPrefs.vhsVizTheme == viz
+private class VhsTheme(val name: String, val bg: Long, val fg: Long, val wall: Int, val viz: Int, val glitch: Float, val chroma: Float, val grad: Int = -1, val mix: Boolean = false) {
+    fun matches() = OsPrefs.vhsBg == bg && OsPrefs.vhsFg == fg && OsPrefs.vhsWall == wall && OsPrefs.vhsVizTheme == viz && OsPrefs.vhsGrad == grad && OsPrefs.vhsFgMix == mix
     fun apply() {
-        OsPrefs.setVhsColors(bg, fg); OsPrefs.setVhsWall(wall); OsPrefs.setVhsVizTheme(viz)
+        OsPrefs.setVhsColors(bg, fg); OsPrefs.setVhsWall(wall); OsPrefs.setVhsVizTheme(viz); OsPrefs.setVhsGrad(grad); OsPrefs.setVhsFgMix(mix)
+
         OsPrefs.setVhsGlitch(glitch); OsPrefs.setVhsChroma(chroma); OsPrefs.setVhsCrt(true)
     }
 }
 private val VHS_THEMES = listOf(
     VhsTheme("VCR BLUE", 0xFF1A1AD0, 0xFFFFFFFF, -1, 0, 0.5f, 0.3f),
-    VhsTheme("SUNSET '86", 0xFF3B0A6E, 0xFFFF6EC7, 0, 6, 0.4f, 0.5f),
-    VhsTheme("GREEN SCREEN", 0xFF050505, 0xFF39FF14, 1, 4, 0.3f, 0.2f),
+    VhsTheme("MALLSOFT", 0xFFFFB3DE, 0xFF3A1F5D, 3, 3, 0.3f, 0.3f, grad = 0),
+    VhsTheme("PLAZA MIX", 0xFF3A1F5D, 0xFFFFB3DE, -1, 6, 0.35f, 0.4f, grad = 2, mix = true),
+    VhsTheme("VAPORWAVE", 0xFFFF6EC7, 0xFFFFFFFF, -1, 8, 0.45f, 0.5f, grad = 1),
+    VhsTheme("CAMCORDER", 0xFF050505, 0xFFFFFFFF, 0, 0, 0.35f, 0.3f),
+    VhsTheme("CHANNEL SURF", 0xFF050505, 0xFF39FF14, 1, 4, 0.6f, 0.5f),
+    VhsTheme("TAPE TOWER", 0xFF3B0A6E, 0xFFFF6EC7, 2, 6, 0.4f, 0.5f),
+    VhsTheme("TV WALL", 0xFF050505, 0xFF5CF6FF, 4, 7, 0.5f, 0.45f),
+    VhsTheme("VIDEO STORE", 0xFF0A0A5A, 0xFFFFF04A, 5, 1, 0.4f, 0.4f),
+    VhsTheme("MIAMI", 0xFF2DE2E6, 0xFFFFFFFF, -1, 2, 0.4f, 0.45f, grad = 3),
+    VhsTheme("SEAPUNK", 0xFF00FFD1, 0xFF3A1F5D, -1, 3, 0.4f, 0.4f, grad = 5),
+    VhsTheme("GREEN SCREEN", 0xFF050505, 0xFF39FF14, -1, 4, 0.3f, 0.2f),
     VhsTheme("AMBER TERM", 0xFF050505, 0xFFFFB000, -1, 5, 0.35f, 0.15f),
-    VhsTheme("CHROME", 0xFF4A4A4A, 0xFF5CF6FF, 2, 8, 0.5f, 0.6f),
-    VhsTheme("HYPERSPACE", 0xFF050505, 0xFFFFFFFF, 3, 7, 0.6f, 0.5f),
-    VhsTheme("CUBE DREAMS", 0xFF240A55, 0xFF29F3FF, 4, 8, 0.45f, 0.45f),
-    VhsTheme("PALM BEACH", 0xFF8A0F6A, 0xFFFFF04A, 5, 1, 0.4f, 0.4f),
-    VhsTheme("OCEAN GRID", 0xFF006C6C, 0xFFFFFFFF, 6, 3, 0.45f, 0.35f),
-    VhsTheme("NEON CITY", 0xFF02020F, 0xFFFF2BD6, 7, 6, 0.5f, 0.55f),
-    VhsTheme("SYNTH PLANET", 0xFF1A0838, 0xFFFFE860, 8, 2, 0.35f, 0.4f),
-    VhsTheme("LASER DISCO", 0xFF02010A, 0xFF7CFF4F, 9, 1, 0.55f, 0.5f),
 )
 
 private fun cycle(list: List<Pair<String, Long>>, cur: Long): Long {
@@ -1598,14 +1613,29 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
             val cur = VHS_THEMES.indexOfFirst { it.matches() }
             VHS_THEMES[(cur + 1).mod(VHS_THEMES.size)].apply()
         },
-        "BACK  " + (VHS_COLORS.firstOrNull { it.second == OsPrefs.vhsBg }?.first ?: "CUSTOM") to { OsPrefs.setVhsColors(cycle(VHS_COLORS, OsPrefs.vhsBg), OsPrefs.vhsFg) },
-        "TEXT  " + (VHS_TEXT.firstOrNull { it.second == OsPrefs.vhsFg }?.first ?: "CUSTOM") to { OsPrefs.setVhsColors(OsPrefs.vhsBg, cycle(VHS_TEXT, OsPrefs.vhsFg)) },
+        // plain colours, then the multicolour (vaporwave) ones
+        "BACK  " + (VHS_GRADS.getOrNull(OsPrefs.vhsGrad)?.first ?: VHS_COLORS.firstOrNull { it.second == OsPrefs.vhsBg }?.first ?: "CUSTOM") to {
+            val n = VHS_COLORS.size + VHS_GRADS.size
+            val cur = if (OsPrefs.vhsGrad in VHS_GRADS.indices) VHS_COLORS.size + OsPrefs.vhsGrad else VHS_COLORS.indexOfFirst { it.second == OsPrefs.vhsBg }
+            val next = (cur + 1).mod(n)
+            if (next < VHS_COLORS.size) { OsPrefs.setVhsGrad(-1); OsPrefs.setVhsColors(VHS_COLORS[next].second, OsPrefs.vhsFg) }
+            else { val gi = next - VHS_COLORS.size; OsPrefs.setVhsGrad(gi); OsPrefs.setVhsColors(VHS_GRADS[gi].second.first(), OsPrefs.vhsFg) }
+        },
+        // single colours, then PASTEL MIX (every letter its own pastel)
+        "TEXT  " + (if (OsPrefs.vhsFgMix) "PASTEL MIX" else VHS_TEXT.firstOrNull { it.second == OsPrefs.vhsFg }?.first ?: "CUSTOM") to {
+            val cur = if (OsPrefs.vhsFgMix) VHS_TEXT.size else VHS_TEXT.indexOfFirst { it.second == OsPrefs.vhsFg }
+            val next = (cur + 1).mod(VHS_TEXT.size + 1)
+            if (next == VHS_TEXT.size) { OsPrefs.setVhsFgMix(true); OsPrefs.setVhsColors(OsPrefs.vhsBg, 0xFFFFB3DE) }
+            else { OsPrefs.setVhsFgMix(false); OsPrefs.setVhsColors(OsPrefs.vhsBg, VHS_TEXT[next].second) }
+        },
+        // the help bars: always there, or sliding away after 2 s (swipe up from the bottom edge to bring them back)
+        "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
         "CRT   " + (if (OsPrefs.vhsCrt) "ON" else "OFF") to { OsPrefs.setVhsCrt(!OsPrefs.vhsCrt) },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
         (if (OsPrefs.vhsPic > 0) "PICTURE CHANGE" else "PICTURE CHOOSE") to { pickPic.launch(arrayOf("image/*")) },
         // 3D backgrounds: tap for the next one, after the last back to none
-        "WALL " + (if (OsPrefs.vhsWall < 0) "NONE" else VhsWalls.names[OsPrefs.vhsWall].take(16)) to {
+        "WALL " + (VhsWalls.names.getOrNull(OsPrefs.vhsWall)?.take(16) ?: "NONE") to {
             OsPrefs.setVhsWall(if (OsPrefs.vhsWall + 1 >= VhsWalls.names.size) -1 else OsPrefs.vhsWall + 1)
         },
         // wide screens: what sits next to the home menu
@@ -1617,6 +1647,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "FONT  " + VHS_FONTS[OsPrefs.vhsFont.coerceIn(0, VHS_FONTS.size - 1)] to { OsPrefs.setVhsFont((OsPrefs.vhsFont + 1) % VHS_FONTS.size) },
         ("TITLE1 " + OsPrefs.vhsTitle1.take(14) + if (editTitle == 1 && blink) "_" else "") to { editTitle = 1 },
         ("TITLE2 " + OsPrefs.vhsTitle2.take(14) + if (editTitle == 2 && blink) "_" else "") to { editTitle = 2 },
+        "SWIPE◀ " + targetName(OsPrefs.vhsSwipe["left"].orEmpty()) to { onChoose("left") },
         "SWIPE▶ " + targetName(OsPrefs.vhsSwipe["right"].orEmpty()) to { onChoose("right") },
         "PIN APPS" to { onChoose("pin") },
         "HOME LAUNCHER" to { Launcher.setHomeMode(ctx, true) },
@@ -1858,7 +1889,7 @@ private fun VhsPlaylist(onExit: () -> Unit) {
  * part way and let go; it settles open or closed), and the letter strip on the right jumps the list.
  */
 @Composable
-private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean, onDrag: (Float) -> Unit, onSettle: (Float) -> Unit, onClose: () -> Unit) {
+private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean, onClose: () -> Unit) {
     val ctx = LocalContext.current
     val o = LocalOsd.current
     val apps = remember(Launcher.apps.size) { Launcher.apps.sortedBy { it.label.uppercase() } }
@@ -1874,6 +1905,9 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
         bubble = c
     }
     val vt = remember { androidx.compose.ui.input.pointer.util.VelocityTracker() }
+    // swiped sideways: the box follows the finger and fades; far or fast enough and it fades out, else it springs back
+    var offX by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(shown) { if (!shown) offX = 0f }
     // a floating menu box over the dimmed screen; tap outside to close
     Box(Modifier.fillMaxSize().graphicsLayer { alpha = if (progress() < 0.001f) 0f else 1f }) {
     if (shown) Box(
@@ -1886,10 +1920,10 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
         Modifier.align(Alignment.Center).fillMaxWidth(0.86f).fillMaxHeight(0.84f)
             .graphicsLayer {
                 val p = progress()
-                // closed: parked far off screen, so the invisible box can't catch taps meant for the menu
-                translationX = if (p < 0.001f) widthPx * 3f else (1f - p) * widthPx * 0.6f
-                alpha = p.coerceIn(0f, 1f)
-                scaleX = 0.92f + 0.08f * p; scaleY = scaleX
+                // fades in where it stands; closed: parked far off screen, so the invisible box can't catch taps
+                translationX = if (p < 0.001f) widthPx * 3f else offX
+                alpha = (p * (1f - kotlin.math.abs(offX) / (widthPx * 0.7f))).coerceIn(0f, 1f)
+                scaleX = 0.94f + 0.06f * p; scaleY = scaleX
             }
             .background(o.bg.copy(alpha = 0.93f))
             .drawBehind {
@@ -1898,12 +1932,16 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                 drawRect(o.fg, Offset(w / 2, w / 2), Size(size.width - w, size.height - w), style = Stroke(w))
             }
             .pointerInput(Unit) {
-                // drag right to close (or part way and back)
+                // swipe left or right to close (or part way and back)
+                fun settle(v: Float) {
+                    if (kotlin.math.abs(offX) > widthPx * 0.22f || kotlin.math.abs(v) > 900f) { Haptics.tick(); onClose() }
+                    else scope.launch { androidx.compose.animation.core.animate(offX, 0f, animationSpec = androidx.compose.animation.core.spring(stiffness = 600f, dampingRatio = 0.85f)) { x, _ -> offX = x } }
+                }
                 detectHorizontalDragGestures(
                     onDragStart = { vt.resetTracking() },
-                    onDragEnd = { onSettle(vt.calculateVelocity().x) },
-                    onDragCancel = { onSettle(0f) },
-                ) { ch, dx -> vt.addPosition(ch.uptimeMillis, ch.position); ch.consume(); onDrag(dx) }
+                    onDragEnd = { settle(vt.calculateVelocity().x) },
+                    onDragCancel = { settle(0f) },
+                ) { ch, dx -> vt.addPosition(ch.uptimeMillis, ch.position); ch.consume(); offX += dx }
             },
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {

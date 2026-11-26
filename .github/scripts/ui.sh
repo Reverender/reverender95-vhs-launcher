@@ -24,7 +24,7 @@ adb exec-out screencap -p > "$OUT/L3b-after-lock.png"
 timeout 10 adb shell input keyevent KEYCODE_SLEEP; sleep 20
 timeout 10 adb shell input keyevent KEYCODE_WAKEUP; sleep 1; timeout 10 adb shell input keyevent 82; sleep 1; timeout 10 adb shell wm dismiss-keyguard; sleep 5
 adb exec-out screencap -p > "$OUT/L4-after-long-lock.png"
-for wi in 0 1 2 3 4 5 6 7 8 9; do
+for wi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG
   timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi --ei r95_vhs_viz $((wi % 9)) --ei r95_vhs_font $((wi % 7)) --ef r95_vhs_uiblur $([ $wi = 3 ] && echo 0.8 || echo 0) >/dev/null; sleep 6
   adb exec-out screencap -p > "$OUT/W$wi-wall.png"
@@ -46,12 +46,16 @@ timeout 10 adb shell settings put system user_rotation 0; sleep 4
 adb exec-out screencap -p > "$OUT/R2-portrait-again.png"
 echo "== lifecycle log"; adb logcat -d | grep -E -A8 "r95 *: (viz|life|power)|FATAL" | grep -v "viz:" | tail -60
 adb exec-out screencap -p > "$OUT/4-vhsonly.png"
-# swipe left: the apps drawer follows the finger
-adb shell input swipe $((W*90/100)) $((H*45/100)) $((W*15/100)) $((H*45/100)) 400; sleep 2
+# swipe up: the apps drawer fades in; swipe it sideways: it fades out
+adb shell input swipe $((W/2)) $((H*65/100)) $((W/2)) $((H*30/100)) 250; sleep 0.12
+adb exec-out screencap -p > "$OUT/4a-drawer-fading.png"; sleep 2
 adb exec-out screencap -p > "$OUT/4b-drawer.png"
-adb shell input keyevent KEYCODE_BACK; sleep 2
+adb shell input swipe $((W*30/100)) $((H*50/100)) $((W*85/100)) $((H*50/100)) 250; sleep 2
+adb exec-out screencap -p > "$OUT/4c-drawer-swiped-away.png"
+adb shell input swipe $((W/2)) $((H*65/100)) $((W/2)) $((H*30/100)) 250; sleep 2
+adb shell input tap $((W*50/100)) $((H*96/100)); sleep 2   # outside the box
+adb exec-out screencap -p > "$OUT/4d-drawer-tapped-out.png"
 # SETUP
-adb shell input swipe $((W/2)) $((H*86/100)) $((W/2)) $((H*45/100)) 250; sleep 0.6   # help bar back
 adb shell input tap $((W/2)) $((H-22)); sleep 3
 adb exec-out screencap -p > "$OUT/5-vhsonly-setup.png"
 # WALL is the 7th item: find it on the screenshot run; tap a few rows down from the header
@@ -107,8 +111,9 @@ timeout 10 adb shell input keyevent KEYCODE_WAKEUP; sleep 2; timeout 10 adb shel
 adb shell am force-stop $VPKG; sleep 1
 adb shell am start -n $VPKG/com.reverender.r95.MainActivity --ef r95_vhs_uiblur 0.7 >/dev/null; sleep 8
 adb exec-out screencap -p > "$OUT/10-vhs-uiblur.png"
-adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 0.15
-adb exec-out screencap -p > "$OUT/10b-vhs-uiblur-drawer.png"; sleep 3
+adb shell input swipe $((W/2)) $((H*65/100)) $((W/2)) $((H*30/100)) 250; sleep 0.15
+adb exec-out screencap -p > "$OUT/10b-vhs-uiblur-drawer.png"; sleep 2
+adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input swipe $((W/2)) $((H*70/100)) $((W/2)) $((H*30/100)) 200; sleep 0.1
 adb exec-out screencap -p > "$OUT/10c-vhs-uiblur-scroll.png"
 echo "uiblur pid: $(adb shell pidof $VPKG)"
@@ -131,14 +136,23 @@ timeout 25 adb shell input swipe $((W*30/100)) $((H*30/100)) $((W*30/100)) $((H*
 timeout 25 adb exec-out screencap -p > "$OUT/13b-vhs-eq-drag.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 1.5
 # setup: THEME twice
-adb shell input swipe $((W/2)) $((H*86/100)) $((W/2)) $((H*45/100)) 250; sleep 0.6   # help bar back
 timeout 25 adb shell input tap $((W/2)) $((H*97/100)); sleep 1.5
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 1
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 2
 timeout 25 adb exec-out screencap -p > "$OUT/14-vhs-theme.png"
+timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 2
+timeout 25 adb exec-out screencap -p > "$OUT/14b-vhs-theme.png"
+timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 2
+# vaporwave colours: each multicolour background, the last with PASTEL MIX text
+for gi in 0 1 2 3 4 5; do
+  timeout 20 adb shell am force-stop $VPKG
+  timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall -1 --ei r95_vhs_grad $gi --ez r95_vhs_mix $([ $gi = 2 ] && echo true || echo false) >/dev/null; sleep 5
+  timeout 25 adb exec-out screencap -p > "$OUT/G$gi-grad.png"
+done
+timeout 20 adb shell am force-stop $VPKG
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_grad -1 --ez r95_vhs_mix false >/dev/null; sleep 4
 echo "eq/theme pid: $(adb shell pidof $VPKG)"
 # visualizer: music, then ■ STOP -> the standby shows must run
-adb shell input swipe $((W/2)) $((H*86/100)) $((W/2)) $((H*45/100)) 250; sleep 0.6   # help bar back
 timeout 25 adb shell input tap $((W/2)) $((H*97/100)); sleep 1.5   # setup -> END back to the menu
 timeout 25 adb logcat -c
 timeout 25 adb shell input keyevent KEYCODE_MEDIA_PLAY; sleep 10

@@ -51,10 +51,11 @@ object OsPrefs {
         }
         vidFxOn = p.getBoolean("vhs_vid_fx", true)
         vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"
-        vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1); vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
+        vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1).takeIf { it < 6 } ?: -1; vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
         vhsPic = p.getInt("vhs_pic", 0); vhsPicDim = p.getFloat("vhs_pic_dim", 0.35f)
         vidColor = p.getFloat("vhs_vid_color", 0.45f); vidBlur = p.getFloat("vhs_vid_blur", 0.25f); vidChroma = p.getFloat("vhs_vid_chroma", 0.4f); vidNoise = p.getFloat("vhs_vid_noise", 0.3f)
         vhsChroma = p.getFloat("vhs_chroma", 0.35f); vhsTrack = p.getFloat("vhs_track", 0.5f)
+        vhsGrad = p.getInt("vhs_grad", -1); vhsFgMix = p.getBoolean("vhs_fg_mix", false); vhsHelpAuto = p.getBoolean("vhs_help_auto", false)
         vhsSwipe = listOf("up", "down", "left", "right").associateWith { p.getString("vhs_swipe_$it", "") ?: "" }
     }
 
@@ -189,6 +190,15 @@ object OsPrefs {
     @set:JvmName("vhsPicDimInternal") var vhsPicDim by mutableStateOf(0.35f); private set
     fun setVhsPicDim(v: Float) { vhsPicDim = v.coerceIn(0f, 0.9f); put { putFloat("vhs_pic_dim", vhsPicDim) } }
     fun setVhsBloom(v: Boolean) { vhsBloom = v; put { putBoolean("vhs_bloom", v) } }
+    /** VHS multicolour background: -1 = the plain BACK colour, else an index into VHS_GRADS */
+    @set:JvmName("vhsGradInternal") var vhsGrad by mutableStateOf(-1); private set
+    fun setVhsGrad(v: Int) { vhsGrad = v; put { putInt("vhs_grad", v) } }
+    /** VHS text in a pastel rainbow (each letter its own colour) */
+    @set:JvmName("vhsFgMixInternal") var vhsFgMix by mutableStateOf(false); private set
+    fun setVhsFgMix(v: Boolean) { vhsFgMix = v; put { putBoolean("vhs_fg_mix", v) } }
+    /** VHS help bars: false = always shown, true = slide away after 2 s (swipe up from the bottom brings them back) */
+    @set:JvmName("vhsHelpAutoInternal") var vhsHelpAuto by mutableStateOf(false); private set
+    fun setVhsHelpAuto(v: Boolean) { vhsHelpAuto = v; put { putBoolean("vhs_help_auto", v) } }
     fun setVhsGlitch(v: Float) { vhsGlitch = v.coerceIn(0f, 1f); put { putFloat("vhs_glitch", vhsGlitch) } }
     /** swipe up/down/left/right → "" | "vhs:setup" | "vhs:search" | "pkg:<component>" */
     @set:JvmName("vhsSwipeInternal") var vhsSwipe by mutableStateOf(mapOf<String, String>()); private set
