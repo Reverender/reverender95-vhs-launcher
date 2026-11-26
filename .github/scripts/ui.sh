@@ -30,6 +30,11 @@ adb shell input swipe $((W*20/100)) $((H*155/1000)) $((W*90/100)) $((H*155/1000)
 timeout 20 adb exec-out screencap -p > "$OUT/N4b-chat-dismissed.png"
 adb shell input tap $((W/3)) $((H*25/100)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
+# type a reply: the keyboard comes up and the reply line moves above it
+adb shell input tap $((W/3)) $((H*88/100)); sleep 2
+adb shell input text "Hallo%sdaar%sdit%sis%seen%slanger%sbericht"; sleep 2
+timeout 20 adb exec-out screencap -p > "$OUT/N6-typing.png"
+adb shell input keyevent KEYCODE_BACK; sleep 1
 # menu switch effect: back to the list, then back to the home screen, caught mid-switch
 # (the emulator runs with animations off, which would skip it)
 adb shell settings put global animator_duration_scale 1; sleep 1
