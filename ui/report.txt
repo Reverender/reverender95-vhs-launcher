@@ -1,13 +1,13 @@
 screen 320 x 640
-11-26 20:28:53.569  6290  6290 I r95     : swipe: used by a control
-notif pid: 6290
-11-26 20:28:52.928  6435  6435 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 20:28:52.934  6435  6435 I AndroidRuntime: Using default boot image
-11-26 20:28:52.934  6435  6435 I AndroidRuntime: Leaving lock profiling enabled
-11-26 20:28:53.316  6435  6435 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 20:28:53.570  6435  6435 D AndroidRuntime: Shutting down VM
-11-26 20:28:59.521  6520  6520 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 20:28:59.535  6520  6520 I AndroidRuntime: Using default boot image
-11-26 20:28:59.535  6520  6520 I AndroidRuntime: Leaving lock profiling enabled
-11-26 20:28:59.636  6520  6520 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 20:28:59.654  6520  6520 D AndroidRuntime: Shutting down VM
+11-26 20:41:51.146  6317  6317 I r95     : swipe: left -> vhs:chat
+notif pid: 6317
+11-26 20:41:49.636  6603  6603 I AndroidRuntime: Using default boot image
+11-26 20:41:49.636  6603  6603 I AndroidRuntime: Leaving lock profiling enabled
+11-26 20:41:50.795  6603  6603 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 20:41:51.187  6603  6603 D AndroidRuntime: Shutting down VM
+11-26 20:42:01.028  6757  6757 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 20:42:01.037  6757  6757 I AndroidRuntime: Using default boot image
+11-26 20:42:01.037  6757  6757 I AndroidRuntime: Leaving lock profiling enabled
+11-26 20:42:01.129  6757  6757 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 20:42:01.138  6757  6757 D AndroidRuntime: Shutting down VM
+11-26 20:42:01.142  6757  6771 I AndroidRuntime: NOTE: attach of thread 'Binder:6757_1' failed
