@@ -380,4 +380,4 @@ internal fun VhsDeckSwitch(mode: String, onSwitch: (String) -> Unit) {
 }
 
 /** Test hooks for the emulator checks (set from MainActivity's launch extras). */
-internal object VhsTestHooks { var rom by mutableStateOf<File?>(null) }
+internal object VhsTestHooks { var rom by mutableStateOf<File?>(null); var switchMs = 420 }

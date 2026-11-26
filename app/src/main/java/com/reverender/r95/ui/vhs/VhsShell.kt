@@ -724,7 +724,7 @@ fun VhsShell(onShutDown: () -> Unit) {
         if (screen == lastScreen) return@LaunchedEffect
         lastScreen = screen
         switchP.snapTo(0f)
-        switchP.animateTo(1f, androidx.compose.animation.core.tween(420, easing = androidx.compose.animation.core.LinearEasing))
+        switchP.animateTo(1f, androidx.compose.animation.core.tween(VhsTestHooks.switchMs, easing = androidx.compose.animation.core.LinearEasing))
     }
     var chooseDir by remember { mutableStateOf("up") }
     val bg = Color(OsPrefs.vhsBg.toInt()); val fg = Color(OsPrefs.vhsFg.toInt())
