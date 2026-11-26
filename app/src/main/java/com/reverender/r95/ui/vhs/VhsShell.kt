@@ -1292,7 +1292,12 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         val playing = p.isPlaying
         // another music app (Spotify, YouTube Music …) playing: the transport keys steer that app
         LaunchedEffect(Unit) {
-            while (true) { com.reverender.r95.core.AppVisibility.awaitForeground(); ExtMedia.poll(ctx, p.isPlaying); delay(700) }
+            while (true) {
+                com.reverender.r95.core.AppVisibility.awaitForeground(); ExtMedia.poll(ctx, p.isPlaying)
+                // VHS+ (notification access): the other app's song title for the ticker
+                if (com.reverender.r95.BuildConfig.NOTIF && ExtMedia.active) runCatching { com.reverender.r95.os.ExternalMedia.refresh(ctx, false) }
+                delay(700)
+            }
         }
         val ext = ExtMedia.active && pending == null
         val clock = SimpleDateFormat(if (OsPrefs.vhs24h) "HH:mm" else "hh:mma", Locale.US).format(Date(now)).let { if (!blink) it.replace(':', ' ') else it }
@@ -1366,7 +1371,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         }
         else if (pd != null) VhsText(("READY:" + pd.label).take(21), invert = blink)
         // what's playing runs past as a ticker, so long names are readable
-        else if (ext) VhsMarquee("♪ " + vhsSafe(listOf(ExtMedia.artist, ExtMedia.title).filter { it.isNotBlank() }.joinToString(" - ").ifBlank { "OTHER MUSIC APP" }).trim())
+        else if (ext) VhsMarquee("♪ " + vhsSafe(listOf(com.reverender.r95.os.ExternalMedia.artist, com.reverender.r95.os.ExternalMedia.title).filter { it.isNotBlank() }.joinToString(" - ").ifBlank { "OTHER MUSIC APP" }).trim())
         else VhsMarquee(vhsSafe(title).trim())
 
         // ---- VOLUME
