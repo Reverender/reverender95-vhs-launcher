@@ -28,12 +28,15 @@ adb logcat -d | grep "r95 *: swipe" | tail -5
 adb shell input tap $((W/3)) $((H*25/100)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
 # menu switch effect: back to the list, then back to the home screen, caught mid-switch
+# (the emulator runs with animations off, which would skip it)
+adb shell settings put global animator_duration_scale 1; sleep 1
 adb shell input keyevent KEYCODE_BACK; sleep 1.5
 adb shell input keyevent KEYCODE_BACK; sleep 0.3
 timeout 20 adb exec-out screencap -p > "$OUT/S1-switch.png"; sleep 5
 adb shell input tap $((W/2)) $((H-22)); sleep 1.4
 timeout 20 adb exec-out screencap -p > "$OUT/S2-switch.png"; sleep 5
 timeout 20 adb exec-out screencap -p > "$OUT/S3-settled.png"
+adb shell settings put global animator_duration_scale 0
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 [ "$ONLY" = notif ] && exit 0
