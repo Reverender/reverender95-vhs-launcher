@@ -45,6 +45,13 @@ adb shell input tap $((W/2)) $((H-22)); sleep 1.4
 timeout 20 adb exec-out screencap -p > "$OUT/S2-switch.png"; sleep 5
 timeout 20 adb exec-out screencap -p > "$OUT/S3-settled.png"
 adb shell settings put global animator_duration_scale 0
+# fonts and the VFD DECK visualizer, and the CRT styles' look (one screenshot each)
+for k in 1 2 3 6 7; do
+  timeout 20 adb shell am force-stop $NPKG
+  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_font $k --ei r95_vhs_viz 6 >/dev/null; sleep 6
+  timeout 20 adb exec-out screencap -p > "$OUT/F$k-font.png"
+done
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_font 0 >/dev/null; sleep 2
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 [ "$ONLY" = notif ] && exit 0
