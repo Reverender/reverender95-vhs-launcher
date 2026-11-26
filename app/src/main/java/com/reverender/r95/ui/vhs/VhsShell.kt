@@ -524,14 +524,13 @@ half4 main(float2 p) {
     return half4(c.rgb * v, c.a);
 }
 """
-private val CURVE_K = floatArrayOf(0f, 0.045f, 0.1f)
 
-private fun Modifier.vhsCurve(level: Int): Modifier =
-    if (level <= 0 || android.os.Build.VERSION.SDK_INT < 33) this else composed {
+private fun Modifier.vhsCurve(amount: Float): Modifier =
+    if (amount <= 0.005f || android.os.Build.VERSION.SDK_INT < 33) this else composed {
         val cache = remember { arrayOfNulls<Any>(1) }
         var key by remember { mutableStateOf("") }
         graphicsLayer {
-            val k = CURVE_K[level.coerceIn(0, 2)]
+            val k = (amount * 100f).roundToInt() / 100f * 0.16f
             val kk = "${size.width}x${size.height}:$k"
             if (kk != key) { cache[0] = runCatching { curveEffect(size.width, size.height, k) }.onFailure { android.util.Log.w("r95", "curve shader", it) }.getOrNull(); key = kk }
             renderEffect = cache[0] as androidx.compose.ui.graphics.RenderEffect?
@@ -547,12 +546,12 @@ private fun curveEffect(w: Float, h: Float, k: Float): androidx.compose.ui.graph
 
 /** CURVE before Android 13: rounded black tube corners and a soft shade along the edges */
 @Composable
-private fun VhsCurveCorners(level: Int) {
+private fun VhsCurveCorners(amount: Float) {
     Canvas(Modifier.fillMaxSize()) {
-        val r = size.minDimension * (if (level >= 2) 0.09f else 0.05f)
+        val r = size.minDimension * (0.02f + 0.13f * amount)
         val tube = androidx.compose.ui.graphics.Path().apply { addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size), androidx.compose.ui.geometry.CornerRadius(r, r))) }
         clipPath(tube, androidx.compose.ui.graphics.ClipOp.Difference) { drawRect(Color.Black) }
-        drawRect(Brush.radialGradient(listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.45f)), Offset(size.width / 2, size.height / 2), size.maxDimension * 0.75f))
+        drawRect(Brush.radialGradient(listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.15f + 0.45f * amount)), Offset(size.width / 2, size.height / 2), size.maxDimension * 0.75f))
     }
 }
 
@@ -819,7 +818,7 @@ fun VhsShell(onShutDown: () -> Unit) {
     val pic = OsPrefs.vhsPic
     val picBmp = remember(pic) { if (pic > 0) VhsBgPicture.load(ctx) else null }
     val grad = vhsGradBrush()
-    val curve = if (screen == Screen.VIDEO && deck.fullscreen) 0 else OsPrefs.vhsCurve
+    val curve = if (screen == Screen.VIDEO && deck.fullscreen) 0f else OsPrefs.vhsCurve
     Box(Modifier.fillMaxSize().vhsCurve(curve)) {
     Box(Modifier.fillMaxSize().then(if (grad != null) Modifier.background(grad) else Modifier.background(bg))) {
       val wall = OsPrefs.vhsWall.takeIf { it < VhsWalls.names.size } ?: -1
@@ -995,7 +994,7 @@ fun VhsShell(onShutDown: () -> Unit) {
       )
     }
     // phones before Android 13 can't bend the picture: dark, rounded tube corners instead
-    if (curve > 0 && android.os.Build.VERSION.SDK_INT < 33) VhsCurveCorners(curve)
+    if (curve > 0.005f && android.os.Build.VERSION.SDK_INT < 33) VhsCurveCorners(curve)
     }
 }
 
@@ -1717,8 +1716,6 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         // the help bars: always there, or sliding away after 2 s (swipe up from the bottom edge to bring them back)
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
         "CRT   " + (if (OsPrefs.vhsCrt) "ON" else "OFF") to { OsPrefs.setVhsCrt(!OsPrefs.vhsCrt) },
-        // the tube bending at the corners
-        "CURVE " + listOf("OFF", "LOW", "HIGH")[OsPrefs.vhsCurve.coerceIn(0, 2)] to { OsPrefs.setVhsCurve((OsPrefs.vhsCurve + 1) % 3) },
         "CLOCK " + (if (OsPrefs.vhs24h) "24H" else "12H") to { OsPrefs.setVhs24h(!OsPrefs.vhs24h) },
         "BLOOM " + (if (OsPrefs.vhsBloom) "ON" else "OFF") to { OsPrefs.setVhsBloom(!OsPrefs.vhsBloom) },
         (if (OsPrefs.vhsPic > 0) "PICTURE CHANGE" else "PICTURE CHOOSE") to { pickPic.launch(arrayOf("image/*")) },
@@ -1770,7 +1767,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                 VhsText(if (cursor == i) "▶" else " ")
                 VhsText(label, invert = cursor == i)
             }
-            if (i == 6 && OsPrefs.vhsPic > 0 && OsPrefs.vhsWall < 0) {
+            if (label.startsWith("PICTURE") && OsPrefs.vhsPic > 0 && OsPrefs.vhsWall < 0) {
                 // the picture: how much of the background colour lies over it, and back to the plain colour
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(" ")
@@ -1785,7 +1782,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                     VhsKey("RESET TO SOLID COLOUR", boxed = true) { VhsBgPicture.clear(ctx); OsPrefs.setVhsPic(0) }
                 }
             }
-            if (i == 3) {
+            if (label.startsWith("CRT ")) {
                 // GLITCH: how worn the tape looks (tracking noise, tearing, static, colour fringe); needs CRT on
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(" ")
@@ -1794,6 +1791,15 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                     Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsGlitch, slider = true) { OsPrefs.setVhsGlitch(it) } }
                     Spacer(Modifier.width(pxDp(2f)))
                     VhsText((OsPrefs.vhsGlitch * 100).roundToInt().toString().padStart(3))
+                }
+                // CURVE: how much the tube bends towards the corners (0 = flat screen)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    VhsText(" ")
+                    VhsText("CURVE ")
+                    Spacer(Modifier.width(pxDp(2f)))
+                    Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsCurve, slider = true) { OsPrefs.setVhsCurve(it) } }
+                    Spacer(Modifier.width(pxDp(2f)))
+                    VhsText((OsPrefs.vhsCurve * 100).roundToInt().toString().padStart(3))
                 }
                 // BLUR: CRT motion blur (phosphor afterglow on the wallpaper and the visualizer)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
