@@ -47,12 +47,14 @@ jobs:
           R95_KEY_PASS: ${{ secrets.R95_KEY_PASS }}
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleVhsRelease
-          mkdir -p dist
+          ./gradlew --no-daemon --stacktrace assembleVhsRelease assembleVhsnotifRelease
+          mkdir -p dist dist-notif
           cp app/build/outputs/apk/vhs/release/*.apk dist/REVERENDER_95-VHS.apk
+          # VHS+ : the same launcher with the notification area (notification access), a separate app
+          cp app/build/outputs/apk/vhsnotif/release/*.apk dist-notif/REVERENDER_95-VHS-PLUS-NOTIFICATIONS.apk
           # what each APK asks for, and which key signed it
           BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          for a in dist/*.apk; do echo "== $a"; "$BT/aapt" dump permissions "$a" | grep -o "name='[^']*'" | sort -u || true
+          for a in dist/*.apk dist-notif/*.apk; do echo "== $a"; "$BT/aapt" dump permissions "$a" | grep -o "name='[^']*'" | sort -u || true
             "$BT/apksigner" verify --print-certs "$a" | grep -E "certificate DN|SHA-256" | head -2 || true; done
 
       - name: Check old-device compatibility (Android 5.0+ API usage)
@@ -69,17 +71,30 @@ jobs:
           name: REVERENDER95-VHS-apk
           path: |
             dist/*.apk
+            dist-notif/*.apk
           if-no-files-found: error
           retention-days: 1
 
+      # "[notif-only]" in the commit message: only the VHS+ APK changed, the plain VHS APK on the release stays as it was
       - name: Publish "latest" release with the APK
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[notif-only]')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: REVERENDER_95 VHS launcher — latest build
           prerelease: true
           files: dist/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish the VHS+ (notifications) APK to "latest"
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: REVERENDER_95 VHS launcher — latest build
+          prerelease: true
+          files: dist-notif/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 permissions:

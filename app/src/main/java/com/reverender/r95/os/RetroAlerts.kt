@@ -191,7 +191,11 @@ object RetroAlerts {
 class RetroNotificationService : NotificationListenerService() {
     override fun onCreate() { super.onCreate(); OsPrefs.init(this) }
 
+    override fun onListenerConnected() { com.reverender.r95.ui.vhs.VhsNotifs.refresh(this) }
+    override fun onListenerDisconnected() { com.reverender.r95.ui.vhs.VhsNotifs.disconnected() }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        com.reverender.r95.ui.vhs.VhsNotifs.refresh(this, sbn)
         if (sbn.packageName == packageName || sbn.isOngoing || !sbn.isClearable) return
         val n = sbn.notification ?: return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
@@ -209,6 +213,7 @@ class RetroNotificationService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        com.reverender.r95.ui.vhs.VhsNotifs.refresh(this)
         android.os.Handler(android.os.Looper.getMainLooper()).post { RetroAlerts.queue.removeAll { it.key == sbn.key } }
     }
 }

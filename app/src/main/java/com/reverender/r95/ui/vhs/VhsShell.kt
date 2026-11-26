@@ -1038,8 +1038,11 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
     }, body = {
         // the title bars: both lines empty (SETUP's TITLE1 / TITLE2) → no bars at all, one empty → a single bar
         val t1 = OsPrefs.vhsTitle1.trim(); val t2 = OsPrefs.vhsTitle2.trim()
-        if (t1.isNotEmpty() && t2.isNotEmpty()) VhsHeader(t1, t2)
-        else if (t1.isNotEmpty() || t2.isNotEmpty()) VhsHeader1(t1.ifEmpty { t2 })
+        // (VHS+ APK: the notification area sits at the right end of the top bar)
+        if (t1.isNotEmpty() || t2.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
+            if (t1.isNotEmpty() && t2.isNotEmpty()) VhsHeader(t1, t2) else VhsHeader1(t1.ifEmpty { t2 })
+            VhsNotifArea(Modifier.align(Alignment.TopEnd).padding(top = pxDp(1f), end = pxDp(2f)))
+        }
         // swipe up opens the phone keyboard for this search; its enter key launches the top match
         // APPS or RADIO: what the search finds (tap the word in front of the search line to switch)
         var radioMode by remember { mutableStateOf(false) }
@@ -1664,6 +1667,10 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "SWIPE◀ " + targetName(OsPrefs.vhsSwipe["left"].orEmpty()) to { onChoose("left") },
         "SWIPE▶ " + targetName(OsPrefs.vhsSwipe["right"].orEmpty()) to { onChoose("right") },
         "PIN APPS" to { onChoose("pin") },
+    ) + (if (!com.reverender.r95.BuildConfig.NOTIF) emptyList() else listOf(
+        // VHS+ APK: the notification area needs notification access (tap to open the phone's setting)
+        ("NOTIFS " + if (VhsNotifs.connected) "ON" else "GRANT ACCESS") to { com.reverender.r95.os.RetroAlerts.openListenerSettings(ctx) },
+    )) + listOf(
         "HOME LAUNCHER" to { Launcher.setHomeMode(ctx, true) },
     ) + (if (com.reverender.r95.BuildConfig.VHS_ONLY) emptyList() else listOf(
         // the VHS-only APK has no desktop to switch to

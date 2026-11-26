@@ -4,6 +4,21 @@ set -u
 OUT=ui; mkdir -p "$OUT"
 SIZE=$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1); W=${SIZE%x*}; H=${SIZE#*x}; echo "screen $W x $H"
 : > "$OUT/install.txt"
+# ---- VHS+ (notification area): grant access, post test notifications, check the title bar
+NPKG=com.reverender.r95.vhs.notif
+adb install -r -g app/build/outputs/apk/vhsnotif/release/*.apk >> "$OUT/install.txt" 2>&1
+timeout 20 adb shell cmd notification allow_listener $NPKG/com.reverender.r95.os.RetroNotificationService
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 15
+timeout 20 adb exec-out screencap -p > "$OUT/N0-none.png"
+timeout 20 adb shell cmd notification post -S bigtext -t Hello t1 First_message >/dev/null; sleep 0.8
+timeout 20 adb exec-out screencap -p > "$OUT/N1-flash.png"; sleep 4
+timeout 20 adb shell cmd notification post -S bigtext -t Again t2 Second_message >/dev/null; sleep 4
+timeout 20 adb exec-out screencap -p > "$OUT/N2-count.png"
+timeout 20 adb shell cmd notification post -S bigtext -t More t3 Third >/dev/null; sleep 4
+timeout 20 adb shell cmd notification cancel t1 >/dev/null; sleep 2
+timeout 20 adb exec-out screencap -p > "$OUT/N3-after-cancel.png"
+echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
+timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 # ---- the VHS-only APK (R8-stripped release)
 VHS_WALL_Y=${VHS_WALL_Y:-433}; VHS_DECKSW_Y=${VHS_DECKSW_Y:-108}
 VPKG=com.reverender.r95.vhs

@@ -63,7 +63,20 @@ android {
         create("vhs") {
             dimension = "dist"; applicationIdSuffix = ".vhs"; versionNameSuffix = "-vhs"
             buildConfigField("boolean", "FULL", "false"); buildConfigField("boolean", "VHS_ONLY", "true")
+            buildConfigField("boolean", "NOTIF", "false")
         }
+        // vhsnotif: the same launcher plus the notification area in the title bars. It needs notification
+        // access (a notification listener), which can make Play Protect warn about sideloaded apps, so it is a
+        // separate APK with its own app id (com.reverender.r95.vhs.notif); the plain VHS APK stays without it.
+        create("vhsnotif") {
+            dimension = "dist"; applicationIdSuffix = ".vhs.notif"; versionNameSuffix = "-vhs-notif"
+            buildConfigField("boolean", "FULL", "false"); buildConfigField("boolean", "VHS_ONLY", "true")
+            buildConfigField("boolean", "NOTIF", "true")
+        }
+    }
+    sourceSets {
+        // the notification build shares the VHS build's bundled emulator cores
+        getByName("vhsnotif") { assets.srcDirs("src/vhs/assets") }
     }
     lint {
         // Media3's @UnstableApi opt-ins are handled with @OptIn; don't let lint block release builds.
@@ -76,7 +89,7 @@ android {
 
 // VHS-only APK: drop the native engine and font it never loads (Revy's JS engine, the emoji font)
 androidComponents {
-    onVariants(selector().withFlavor("dist" to "vhs")) { v ->
+    onVariants(selector().all()) { v ->
         v.packaging.jniLibs.excludes.addAll(listOf("**/libquickjs.so")) // (the VHS GAME DECK uses libretrodroid)
         v.androidResources.ignoreAssetsPatterns.addAll(listOf("NotoColorEmojiCompat.ttf", "<dir>revy"))
     }
