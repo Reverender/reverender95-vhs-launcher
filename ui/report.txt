@@ -1,149 +1,147 @@
 screen 320 x 640
 Warning: Activity not started, its current task has been brought to the front
-after right tap:   mCurrentFocus=Window{b2aa69a u0 com.reverender.r95.vhs/com.reverender.r95.MainActivity}
-after clock hold:   mCurrentFocus=Window{a75ab4b u0 com.google.android.deskclock/com.android.deskclock.DeskClock}
-11-26 12:55:03.711  7271  7271 I r95     : clock: ComponentInfo{com.google.android.deskclock/com.android.deskclock.DeskClock}
+after right tap:   mCurrentFocus=Window{3304938 u0 com.reverender.r95.vhs/com.reverender.r95.MainActivity}
+after clock hold:   mCurrentFocus=Window{caf53ee u0 com.google.android.deskclock/com.android.deskclock.DeskClock}
+11-26 13:17:28.161  6981  6981 I r95     : clock: ComponentInfo{com.google.android.deskclock/com.android.deskclock.DeskClock}
 == lifecycle log
-11-26 12:54:49.590  7212  7212 I MediaController: Init 7de5021 [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
-11-26 12:54:49.760  7212  7218 I erender.r95.vh: Compiler allocated 6627KB to compile void f4.U1.c(A.A, K.p, int)
-11-26 12:54:50.560  1909  1940 E memtrack: Couldn't load memtrack module
-11-26 12:54:50.560  1909  1940 W android.os.Debug: failed to get memory consumption info: -1
-11-26 12:54:50.562  1909  1940 E memtrack: Couldn't load memtrack module
-11-26 12:54:50.563  1909  1940 W android.os.Debug: failed to get memory consumption info: -1
+11-26 13:17:13.517  6839  6859 I OpenGLRenderer: Davey! duration=1095ms; Flags=0, IntendedVsync=119929716568, Vsync=120913049862, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=120920995724, AnimationStart=120921003534, PerformTraversalsStart=120946344774, DrawStart=120946376317, SyncQueued=120960245690, SyncStart=120960576517, IssueDrawCommandsStart=120961259935, SwapBuffers=121015435802, FrameCompleted=121025402237, DequeueBufferDuration=135000, QueueBufferDuration=898000, 
+11-26 13:17:13.518  6839  6839 I MediaController: Init eaafc57 [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
+11-26 13:17:13.667  6839  6845 I erender.r95.vh: Compiler allocated 6628KB to compile void f4.U1.c(A.A, K.p, int)
+11-26 13:17:14.078  6039  6081 I Dialer  : VvmTaskExecutor - executing task com.android.voicemail.impl.ActivationTask@69a7050
+11-26 13:17:14.078  6039  6081 I Dialer  : PreOMigrationHandler - ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, ***, UserHandle{0} already migrated
+11-26 13:17:14.090  1662  1662 D Zygote  : Forked child process 6875
+11-26 13:17:14.095  1905  1935 I ActivityManager: Start proc 6875:android.process.acore/u0a54 for content provider {com.android.providers.contacts/com.android.providers.contacts.VoicemailContentProvider}
 --
-11-26 12:54:54.882  7271  7271 I r95     : life: start
-11-26 12:54:54.937  7271  7272 I erender.r95.vh: Compiler allocated 9772KB to compile void i4.d.a()
-11-26 12:54:54.981  7271  7289 D HostConnection: HostConnection::get() New Host Connection established 0x7288f0a84140, tid 7289
-11-26 12:54:54.985  7271  7289 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
-11-26 12:54:54.988  7271  7289 D EGL_emulation: eglCreateContext: 0x7288f0a84aa0: maj 3 min 0 rcv 3
-11-26 12:54:54.989  7271  7289 D EGL_emulation: eglMakeCurrent: 0x7288f0a84aa0: ver 3 0 (tinfo 0x7288f0a18480)
-11-26 12:54:54.994  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
-11-26 12:54:54.994  1567  1567 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@3.0::IMapper/default in either framework or device manifest.
-11-26 12:54:54.994  7271  7289 W Gralloc3: mapper 3.x is not supported
+11-26 13:17:19.218  6981  6981 I r95     : life: start
+11-26 13:17:19.299  6981  6987 I erender.r95.vh: Compiler allocated 9748KB to compile void i4.d.a()
+11-26 13:17:19.336  6981  7000 D HostConnection: HostConnection::get() New Host Connection established 0x758d221e1b20, tid 7000
+11-26 13:17:19.337  6981  7000 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-26 13:17:19.344  6981  7000 D EGL_emulation: eglCreateContext: 0x758d222a80c0: maj 3 min 0 rcv 3
+11-26 13:17:19.345  6981  7000 D EGL_emulation: eglMakeCurrent: 0x758d222a80c0: ver 3 0 (tinfo 0x758d22312ea0)
+11-26 13:17:19.350  2052  7024 I Fitness : OnPackageChangedOperation got intent: Intent { act=android.intent.action.PACKAGE_CHANGED dat=package:com.google.android.googlequicksearchbox flg=0x45000010 cmp=com.google.android.gms/.chimera.PersistentIntentOperationService (has extras) } [CONTEXT service_id=17 ]
+11-26 13:17:19.354  1693  1724 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
+11-26 13:17:19.355  1567  1567 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@3.0::IMapper/default in either framework or device manifest.
 --
-11-26 12:54:55.950  7271  7271 I Choreographer: Skipped 63 frames!  The application may be doing too much work on its main thread.
-11-26 12:54:56.032  7271  7289 I OpenGLRenderer: Davey! duration=1136ms; Flags=0, IntendedVsync=153169527500, Vsync=154219527458, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=154224389210, AnimationStart=154224416470, PerformTraversalsStart=154245537710, DrawStart=154245617290, SyncQueued=154261468960, SyncStart=154261602580, IssueDrawCommandsStart=154261910790, SwapBuffers=154299498220, FrameCompleted=154306473730, DequeueBufferDuration=136000, QueueBufferDuration=1159000, 
-11-26 12:54:56.034  7271  7271 I MediaController: Init 8d34b15 [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
-11-26 12:54:56.346  7271  7272 I erender.r95.vh: Compiler allocated 6696KB to compile void f4.U1.c(A.A, K.p, int)
-11-26 12:54:56.419  7271  7272 I erender.r95.vh: Compiler allocated 6901KB to compile void f4.U1.c(A.A, K.p, int)
-11-26 12:54:56.903  1909  1940 E memtrack: Couldn't load memtrack module
-11-26 12:54:56.903  1909  1940 W android.os.Debug: failed to get memory consumption info: -1
-11-26 12:54:57.848  1909  1941 I ActivityManager: Killing 5857:com.google.android.calendar/u0a140 (adj 985): empty #17
+11-26 13:17:20.525  6981  6981 I Choreographer: Skipped 77 frames!  The application may be doing too much work on its main thread.
+11-26 13:17:20.627  2494  6127 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+11-26 13:17:20.632  6981  7000 I OpenGLRenderer: Davey! duration=1393ms; Flags=0, IntendedVsync=126746381281, Vsync=128029714563, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=128032924771, AnimationStart=128032932190, PerformTraversalsStart=128056307197, DrawStart=128056333654, SyncQueued=128072019525, SyncStart=128072084309, IssueDrawCommandsStart=128072888481, SwapBuffers=128131372115, FrameCompleted=128140350050, DequeueBufferDuration=22000, QueueBufferDuration=181000, 
+11-26 13:17:20.633  6981  6981 I MediaController: Init eaafc57 [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
+11-26 13:17:20.713  2494  6127 I Icing   : Indexing done com.google.android.gms-apps
+11-26 13:17:20.713  2494  6127 I Icing   : Indexing com.google.android.gms-internal.3p:MobileApplication from com.google.android.gms
+11-26 13:17:20.719  2494  6127 I Icing   : Indexing done com.google.android.gms-internal.3p:MobileApplication
+11-26 13:17:21.152  6981  6987 I erender.r95.vh: Compiler allocated 6697KB to compile void f4.U1.c(A.A, K.p, int)
 --
-11-26 12:55:04.193  7271  7271 I r95     : life: stop
-11-26 12:55:04.197  7334  7356 W GAv4    : CampaignTrackingReceiver is not registered, not exported or is disabled. Installation campaign tracking is not possible. See http://goo.gl/8Rd3yj for instructions.
-11-26 12:55:04.197  7334  7356 W GAv4    : AnalyticsService not registered in the app manifest. Hits might not be delivered reliably. See http://goo.gl/8Rd3yj for instructions.
-11-26 12:55:04.199  2322  4786 I FontLog : Received query Google Sans:500, URI content://com.google.android.gms.fonts [CONTEXT service_id=132 ]
-11-26 12:55:04.199  2322  4786 I FontLog : Query [Google Sans:500] resolved to {Google Sans, wdth 100.0, wght 500, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
-11-26 12:55:04.209  7334  7353 I PrimesTesting: GserviceFlagsSupplier.get()
-11-26 12:55:04.225  2322  4786 I FontLog : Font PFD returned from cache for {Google Sans, wdth 100.0, wght 500, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
-11-26 12:55:04.225  2322  4786 I FontLog : Fetch {Google Sans, wdth 100.0, wght 500, ital 0.0, bestEffort false} end status Status{statusCode=SUCCESS, resolution=null} [CONTEXT service_id=132 ]
-11-26 12:55:04.227  2322  4218 I FontLog : Pulling font file for id = 5, cache size = 5 [CONTEXT service_id=132 ]
+11-26 13:17:28.637  6981  6981 I r95     : life: stop
+11-26 13:17:28.679  2494  2796 I FontLog : Received query Google Sans, URI content://com.google.android.gms.fonts [CONTEXT service_id=132 ]
+11-26 13:17:28.679  2494  2796 I FontLog : Query [Google Sans] resolved to {Google Sans, wdth 100.0, wght 400, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
+11-26 13:17:28.680  2494  2796 I FontLog : Font PFD returned from cache for {Google Sans, wdth 100.0, wght 400, ital 0.0, bestEffort false} [CONTEXT service_id=132 ]
+11-26 13:17:28.680  2494  2796 I FontLog : Fetch {Google Sans, wdth 100.0, wght 400, ital 0.0, bestEffort false} end status Status{statusCode=SUCCESS, resolution=null} [CONTEXT service_id=132 ]
+11-26 13:17:28.682  7070  7100 I AlarmClock: Priming ringtone title cache
+11-26 13:17:28.690  2494  2796 I FontLog : Pulling font file for id = 9, cache size = 6 [CONTEXT service_id=132 ]
+11-26 13:17:28.696  7070  7096 D HostConnection: HostConnection::get() New Host Connection established 0x758d23e89ea0, tid 7096
+11-26 13:17:28.699  7070  7096 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
 --
-11-26 12:55:14.889  7271  7271 I r95     : life: start
-11-26 12:55:14.906  7271  7271 I ExoPlayerImpl: Init d6e351a [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
-11-26 12:55:14.941  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
-11-26 12:55:14.943  1699  1699 I chatty  : uid=1000(system) allocator@2.0-s identical 1 line
-11-26 12:55:14.943  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
-11-26 12:55:15.007  7271  7289 D EGL_emulation: eglMakeCurrent: 0x7288f0a84aa0: ver 3 0 (tinfo 0x7288f0a18480)
-11-26 12:55:15.069  7271  7277 I erender.r95.vh: Background young concurrent copying GC freed 13498(504KB) AllocSpace objects, 2(68KB) LOS objects, 7% free, 4393KB/4753KB, paused 737us total 140.840ms
-11-26 12:55:15.102  1909  1934 W InputReader: Device has associated, but no associated display id.
-11-26 12:55:15.103  1909  1934 I chatty  : uid=1000(system) android.anim identical 18 lines
-11-26 12:55:15.103  1909  1934 W InputReader: Device has associated, but no associated display id.
-11-26 12:55:15.104  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 528384
-11-26 12:55:15.114  1702  6770 W EmuHWC2 : No layers, exit, buffer 0x0
-11-26 12:55:15.132  7334  7361 D EGL_emulation: eglMakeCurrent: 0x7288f0a56d00: ver 3 0 (tinfo 0x7288f0aa9c20)
-11-26 12:55:15.157  1909  6439 D HostConnection: HostConnection::get() New Host Connection established 0x728898a7d180, tid 6439
-11-26 12:55:15.157  1909  6439 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-26 13:17:39.331  6981  6981 I r95     : life: start
+11-26 13:17:39.349  6981  6981 I ExoPlayerImpl: Init 77acfc6 [AndroidXMedia3/1.5.1] [generic_x86_64, Android SDK built for x86_64, Google, 29]
+11-26 13:17:39.389  1693  1724 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
+11-26 13:17:39.393  1693  1724 I chatty  : uid=1000(system) HwBinder:1693_1 identical 1 line
+11-26 13:17:39.394  1693  1724 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
+11-26 13:17:39.453  6981  7000 D EGL_emulation: eglMakeCurrent: 0x758d222a80c0: ver 3 0 (tinfo 0x758d22312ea0)
+11-26 13:17:39.564  1905  1928 W InputReader: Device has associated, but no associated display id.
+11-26 13:17:39.565  1905  1928 I chatty  : uid=1000(system) android.anim identical 18 lines
+11-26 13:17:39.565  1905  1928 W InputReader: Device has associated, but no associated display id.
+11-26 13:17:39.565  1693  1724 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 528384
+11-26 13:17:39.573  1695  1695 W EmuHWC2 : No layers, exit, buffer 0x0
+11-26 13:17:39.591  7070  7096 D EGL_emulation: eglMakeCurrent: 0x758d23e8a080: ver 3 0 (tinfo 0x758d23ede3c0)
+11-26 13:17:39.595  1905  4996 D HostConnection: HostConnection::get() New Host Connection established 0x758cd49ae560, tid 4996
+11-26 13:17:39.598  1905  4996 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
 --
-11-26 12:55:16.334  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 32768
-11-26 12:55:16.350  1909  1934 I WindowManager: Screen frozen for +433ms due to Window{cf0d81c u0 StatusBar}
-11-26 12:55:16.340  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 32768
-11-26 12:55:16.438  1699  1699 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
-11-26 12:55:16.501  7334  7334 I AppLifecycleTracker: onActivityStopped: 
-11-26 12:55:16.501  7334  7334 I AppLifecycleTracker: App transition to background
-11-26 12:55:16.503  7334  7334 I AppLifecycleTracker: onActivityDestroyed: 
-11-26 12:55:17.090  1909  1940 E memtrack: Couldn't load memtrack module
-/tmp/test.nes: 1 file pushed, 0 skipped. 175.9 MB/s (24592 bytes in 0.000s)
-game pid: 7698
-after back pid: 7698
-after eject pid: 7698
+11-26 13:17:40.826  1905  1928 I WindowManager: Screen frozen for +408ms due to Window{3304938 u0 com.reverender.r95.vhs/com.reverender.r95.MainActivity}
+11-26 13:17:40.892  1693  1724 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 823296
+11-26 13:17:40.949  7070  7070 I AppLifecycleTracker: onActivityStopped: 
+11-26 13:17:40.949  7070  7070 I AppLifecycleTracker: App transition to background
+11-26 13:17:40.950  7070  7070 I AppLifecycleTracker: onActivityDestroyed: 
+11-26 13:17:41.472  1905  3500 I ActivityManager: Killing 5771:com.google.android.videos/u0a128 (adj 985): empty #17
+11-26 13:17:41.527  1663  1663 I Zygote  : Process 5771 exited due to signal 9 (Killed)
+11-26 13:17:41.555  1905  1936 I libprocessgroup: Successfully killed process cgroup uid 10128 pid 5771 in 82ms
+/tmp/test.nes: 1 file pushed, 0 skipped. 181.5 MB/s (24592 bytes in 0.000s)
+game pid: 7507
+after back pid: 7507
+after eject pid: 7507
 == eject log
-11-26 12:56:40.844  7800  7800 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 12:56:40.876  7800  7800 I AndroidRuntime: Using default boot image
-11-26 12:56:40.876  7800  7800 I AndroidRuntime: Leaving lock profiling enabled
-11-26 12:56:41.089  7800  7800 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 12:56:41.157  7800  7800 D AndroidRuntime: Shutting down VM
-11-26 12:56:45.684  7818  7818 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 12:56:45.686  7818  7818 I AndroidRuntime: Using default boot image
-11-26 12:56:45.686  7818  7818 I AndroidRuntime: Leaving lock profiling enabled
-11-26 12:56:45.743  7818  7818 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 12:56:45.787  7818  7818 D AndroidRuntime: Shutting down VM
-11-26 12:56:50.312  7835  7835 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 12:56:50.323  7835  7835 I AndroidRuntime: Using default boot image
-11-26 12:56:50.323  7835  7835 I AndroidRuntime: Leaving lock profiling enabled
-11-26 12:56:50.484  7835  7835 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 12:56:50.581  7835  7835 D AndroidRuntime: Shutting down VM
+11-26 13:19:04.681  7598  7598 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 13:19:04.701  7598  7598 I AndroidRuntime: Using default boot image
+11-26 13:19:04.701  7598  7598 I AndroidRuntime: Leaving lock profiling enabled
+11-26 13:19:04.776  7598  7598 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 13:19:04.855  7598  7598 D AndroidRuntime: Shutting down VM
+11-26 13:19:09.226  7617  7617 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 13:19:09.227  7617  7617 I AndroidRuntime: Using default boot image
+11-26 13:19:09.227  7617  7617 I AndroidRuntime: Leaving lock profiling enabled
+11-26 13:19:09.313  7617  7617 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 13:19:09.382  7617  7617 D AndroidRuntime: Shutting down VM
+11-26 13:19:14.253  7634  7634 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 13:19:14.256  7634  7634 I AndroidRuntime: Using default boot image
+11-26 13:19:14.257  7634  7634 I AndroidRuntime: Leaving lock profiling enabled
+11-26 13:19:14.428  7634  7634 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 13:19:14.489  7634  7634 D AndroidRuntime: Shutting down VM
 == after eject audio
-11-26 12:53:56:795 player piid:15 state:started
-11-26 12:54:28:662 player piid:15 state:started
-11-26 12:55:58:756 player piid:79 state:started
+11-26 13:16:23:149 player piid:15 state:started
+11-26 13:16:52:903 player piid:15 state:started
+11-26 13:18:21:269 player piid:79 state:started
 == radio playing?
-      state=PlaybackState {state=6, position=0, buffered position=0, speed=0.0, updated=298310, actions=7339671, custom actions=[], active item id=0, error=null}
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at H1.s.r(SourceFile:93)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       at H1.s.l(SourceFile:17)
-11-26 12:57:04.378  7887  7917 E ExoPlayerImplInternal:       ... 7 more
-11-26 12:57:13.812  7887  7887 I r95     : radio: Hardcore Radio -> http://liquiddoom.net:8000/hardcore
+      state=PlaybackState {state=6, position=0, buffered position=0, speed=0.0, updated=271798, actions=7339671, custom actions=[], active item id=0, error=null}
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at H1.s.r(SourceFile:93)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       at H1.s.l(SourceFile:17)
+11-26 13:19:28.795  7689  7718 E ExoPlayerImplInternal:       ... 7 more
+11-26 13:19:38.019  7689  7689 I r95     : radio: Hardcore Radio -> http://liquiddoom.net:8000/hardcore
 == after 60 s asleep
-      state=PlaybackState {state=3, position=50854, buffered position=61903, speed=1.0, updated=357679, actions=7339655, custom actions=[], active item id=0, error=null}
-  ID:103 -- type:android.media.AudioTrack -- u/pid:10146/7887 -- state:started -- attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0xA00 tags= bundle=null
-11-26 12:53:56:795 player piid:15 state:started
-11-26 12:54:28:662 player piid:15 state:started
-  * ServiceRecord{eab1b7f u0 com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService}
+      state=PlaybackState {state=3, position=50884, buffered position=62181, speed=1.0, updated=331595, actions=7339655, custom actions=[], active item id=0, error=null}
+  ID:103 -- type:android.media.AudioTrack -- u/pid:10146/7689 -- state:started -- attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0xA00 tags= bundle=null
+11-26 13:16:23:149 player piid:15 state:started
+11-26 13:16:52:903 player piid:15 state:started
+  * ServiceRecord{d510b48 u0 com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService}
     isForeground=true foregroundId=1001 foregroundNoti=Notification(channel=default_channel_id pri=0 contentView=null vibrate=null sound=null defaults=0x0 flags=0x6a color=0x00000000 category=transport groupKey=media3_group_key actions=1 vis=PUBLIC)
-uiblur pid: 8058
+uiblur pid: 7865
 Warning: Activity not started, intent has been delivered to currently running top-most instance.
-/system/bin/sh: syntax error: unexpected EOF
-/system/bin/sh: syntax error: unexpected EOF
-/system/bin/sh: REVERENDER: inaccessible or not found
-eq/theme pid: 8840
+Warning: Activity not started, intent has been delivered to currently running top-most instance.
+eq/theme pid: 8689
 == game log
-11-26 13:00:07.036  8893  8893 D AndroidRuntime: Shutting down VM
-11-26 13:00:08.334  8840  8851 I erender.r95.vh: Background young concurrent copying GC freed 58664(2124KB) AllocSpace objects, 5(476KB) LOS objects, 18% free, 6711KB/8241KB, paused 12.396ms total 201.462ms
-11-26 13:00:08.751  8840  8851 I erender.r95.vh: Background concurrent copying GC freed 5339(428KB) AllocSpace objects, 0(0B) LOS objects, 43% free, 8047KB/13MB, paused 3.754ms total 151.108ms
-11-26 13:00:17.404  8937  8937 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 13:00:17.406  8937  8937 I AndroidRuntime: Using default boot image
-11-26 13:00:17.406  8937  8937 I AndroidRuntime: Leaving lock profiling enabled
-11-26 13:00:17.473  8937  8937 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 13:00:17.584  8937  8937 D AndroidRuntime: Shutting down VM
-11-26 13:00:18.573  8840  8840 I r95     : life: stop
-11-26 13:00:24.891  1909  3295 I ActivityManager: Force stopping com.reverender.r95.vhs appid=10146 user=0: from pid 9041
-11-26 13:00:24.892  1909  3295 I ActivityManager: Killing 8840:com.reverender.r95.vhs/u0a146 (adj 50): stop com.reverender.r95.vhs
-11-26 13:00:24.895  1909  3295 W ActivityManager: Scheduling restart of crashed service com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService in 1000ms
-11-26 13:00:24.897  1909  3295 W ActivityTaskManager: Force removing ActivityRecord{6d946a4 u0 com.reverender.r95.vhs/com.reverender.r95.MainActivity t23 f}: app died, no saved state
-11-26 13:00:24.905  1909  3295 I ActivityManager:   Force stopping service ServiceRecord{ff3f22 u0 com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService}
-11-26 13:00:24.929  1909  3295 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.reverender.r95.vhs/com.reverender.r95.MainActivity (has extras)} from uid 2000
-11-26 13:00:24.947  9049  9049 W erender.r95.vh: Unexpected CPU variant for X86 using defaults: x86_64
-11-26 13:00:24.951  1909  1942 I ActivityManager: Start proc 9049:com.reverender.r95.vhs/u0a146 for activity {com.reverender.r95.vhs/com.reverender.r95.MainActivity}
-11-26 13:00:24.990  9049  9049 W RenderThread: type=1400 audit(0.0:192): avc: denied { write } for name="property_service" dev="tmpfs" ino=7860 scontext=u:r:untrusted_app:s0:c146,c256,c512,c768 tcontext=u:object_r:property_socket:s0 tclass=sock_file permissive=0 app=com.reverender.r95.vhs
-11-26 13:00:25.038  9049  9049 I r95     : perf: ram=1.9 GB lowRam=true memClass=512 MB
-11-26 13:00:25.080  9049  9049 I r95     : life: start
-11-26 13:00:25.127  9049  9055 I erender.r95.vh: Compiler allocated 9772KB to compile void i4.d.a()
-11-26 13:00:25.752  1909  1940 I ActivityTaskManager: Displayed com.reverender.r95.vhs/com.reverender.r95.MainActivity: +815ms
-11-26 13:00:25.802  1909  3297 D MediaSessionService: Media button session is changed to com.reverender.r95.vhs/androidx.media3.session.id. (userId=0)
-11-26 13:00:25.812  9049  9049 I r95     : viz: music=false fresh=false loud=false idle=false t=0
-11-26 13:00:26.167  9049  9055 I erender.r95.vh: Compiler allocated 6681KB to compile void f4.U1.c(A.A, K.p, int)
-vhs-only pid: 9049
+11-26 13:22:33.635  8746  8746 D AndroidRuntime: Shutting down VM
+11-26 13:22:44.091  8794  8794 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-26 13:22:44.094  8794  8794 I AndroidRuntime: Using default boot image
+11-26 13:22:44.094  8794  8794 I AndroidRuntime: Leaving lock profiling enabled
+11-26 13:22:44.157  8794  8794 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-26 13:22:44.278  8794  8794 D AndroidRuntime: Shutting down VM
+11-26 13:22:44.684  8689  8689 I r95     : life: stop
+11-26 13:22:51.531  1905  2884 I ActivityManager: Force stopping com.reverender.r95.vhs appid=10146 user=0: from pid 8900
+11-26 13:22:51.531  1905  2884 I ActivityManager: Killing 8689:com.reverender.r95.vhs/u0a146 (adj 50): stop com.reverender.r95.vhs
+11-26 13:22:51.537  1905  2884 W ActivityManager: Scheduling restart of crashed service com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService in 1000ms
+11-26 13:22:51.537  1905  2884 W ActivityTaskManager: Force removing ActivityRecord{780f7f7 u0 com.reverender.r95.vhs/com.reverender.r95.MainActivity t24 f}: app died, no saved state
+11-26 13:22:51.543  1905  2884 I ActivityManager:   Force stopping service ServiceRecord{9fc49ad u0 com.reverender.r95.vhs/com.reverender.r95.audio.PlaybackService}
+11-26 13:22:51.574  1905  1982 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.reverender.r95.vhs/com.reverender.r95.MainActivity (has extras)} from uid 2000
+11-26 13:22:51.587  8909  8909 W erender.r95.vh: Unexpected CPU variant for X86 using defaults: x86_64
+11-26 13:22:51.589  1905  1935 I ActivityManager: Start proc 8909:com.reverender.r95.vhs/u0a146 for activity {com.reverender.r95.vhs/com.reverender.r95.MainActivity}
+11-26 13:22:51.636  8909  8909 I r95     : perf: ram=1.9 GB lowRam=true memClass=512 MB
+11-26 13:22:51.612  8909  8909 W RenderThread: type=1400 audit(0.0:195): avc: denied { write } for name="property_service" dev="tmpfs" ino=6844 scontext=u:r:untrusted_app:s0:c146,c256,c512,c768 tcontext=u:object_r:property_socket:s0 tclass=sock_file permissive=0 app=com.reverender.r95.vhs
+11-26 13:22:51.686  8909  8909 I r95     : life: start
+11-26 13:22:51.750  8909  8915 I erender.r95.vh: Compiler allocated 9748KB to compile void i4.d.a()
+11-26 13:22:51.811  8909  8915 I erender.r95.vh: Compiler allocated 9772KB to compile void i4.d.a()
+11-26 13:22:52.436  1905  1933 I ActivityTaskManager: Displayed com.reverender.r95.vhs/com.reverender.r95.MainActivity: +851ms
+11-26 13:22:52.491  1905  1982 D MediaSessionService: Media button session is changed to com.reverender.r95.vhs/androidx.media3.session.id. (userId=0)
+11-26 13:22:52.499  8909  8909 I r95     : viz: music=false fresh=false loud=false idle=false t=0
+11-26 13:22:52.813  8909  8915 I erender.r95.vh: Compiler allocated 6697KB to compile void f4.U1.c(A.A, K.p, int)
+11-26 13:22:52.855  8909  8915 I erender.r95.vh: Compiler allocated 6901KB to compile void f4.U1.c(A.A, K.p, int)
+vhs-only pid: 8909
 == warnings
 .github/scripts/ui.sh: line 179: PKG: unbound variable
