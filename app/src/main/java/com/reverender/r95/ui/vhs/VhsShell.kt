@@ -942,16 +942,21 @@ fun VhsShell(onShutDown: () -> Unit) {
       LaunchedEffect(Unit) {
           androidx.compose.runtime.snapshotFlow { VhsPowerOn.pending }.collect { pend ->
               if (!pend) return@collect
-              // the screen-off signal can come while the launcher still counts as shown: wait until it has
-              // really gone, then play when it comes back (the screen stays dark until then)
-              kotlinx.coroutines.withTimeoutOrNull(3000) { androidx.compose.runtime.snapshotFlow { com.reverender.r95.core.AppVisibility.visible }.first { !it } }
-              powerHold = true
-              com.reverender.r95.core.AppVisibility.awaitForeground()
-              // shown behind the lock screen still? wait for the unlock, so the switch-on is actually seen
+              // 1) wait until the screen is really off (a stray signal with the screen on is dropped)
+              val pm = ctx.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
               val km = ctx.getSystemService(android.content.Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
-              val waitUntil = android.os.SystemClock.uptimeMillis() + 120_000
-              while (!VhsPowerOn.present && km.isKeyguardLocked && android.os.SystemClock.uptimeMillis() < waitUntil) delay(60)
-              delay(60) // let the lock screen finish sliding away
+              val offBy = android.os.SystemClock.uptimeMillis() + 3000
+              while (pm.isInteractive && android.os.SystemClock.uptimeMillis() < offBy) delay(50)
+              if (pm.isInteractive) { VhsPowerOn.pending = false; return@collect }
+              powerHold = true
+              // 2) play when the picture can actually be seen again: screen on, lock screen gone, the launcher's
+              //    window in front with focus. Checked directly each time (no one-shot unlock signal to miss), so
+              //    quick relocks, "lock after N seconds" and Smart Lock all end up here
+              while (true) {
+                  val on = pm.isInteractive
+                  if (on && VhsPowerOn.focused && !km.isKeyguardLocked) break
+                  delay(if (on) 30 else 400)
+              }
               android.util.Log.i("r95", "power: on")
               powerHold = false
               VhsPowerOn.pending = false
@@ -2144,6 +2149,8 @@ internal object VhsPowerOn {
     var pending by mutableStateOf(false)
     /** the phone was unlocked (the lock screen went away) since the screen went off */
     @Volatile var present = false
+    /** the launcher's window has input focus (nothing over it: no lock screen, shade or other app) */
+    @Volatile var focused = false
 }
 
 /** CRT switch-on: a dot stretches into a bright line, the line opens into the picture, a last white flash. */

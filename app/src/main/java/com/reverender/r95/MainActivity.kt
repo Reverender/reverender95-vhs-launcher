@@ -182,6 +182,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onTrimMemory(level: Int) { super.onTrimMemory(level); com.reverender.r95.core.Perf.onTrim(level) }
 
     override fun onStart() { super.onStart(); android.util.Log.i("r95", "life: start"); com.reverender.r95.core.AppVisibility.set(true) }
+    override fun onWindowFocusChanged(hasFocus: Boolean) { super.onWindowFocusChanged(hasFocus); com.reverender.r95.ui.vhs.VhsPowerOn.focused = hasFocus }
     private var lastStopMs = 0L
     // the screen went off while (or just after) the VHS launcher showed: play the CRT switch-on when it comes back
     private val screenOff = object : android.content.BroadcastReceiver() {
