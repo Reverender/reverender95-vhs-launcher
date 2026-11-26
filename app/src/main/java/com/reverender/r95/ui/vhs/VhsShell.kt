@@ -2054,7 +2054,9 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
     var offX by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(shown) { if (!shown) offX = 0f }
     // a floating menu box over the dimmed screen; tap outside to close
-    Box(Modifier.fillMaxSize().graphicsLayer { alpha = if (progress() < 0.001f) 0f else 1f }) {
+    // closed: kept composed (opens faster) but laid out at zero size, so nothing in it can catch a touch or a
+    // swipe meant for the home screen (its sideways-drag and letter strip did, and ate swipe left / right)
+    Box((if (shown || progress() > 0.001f) Modifier.fillMaxSize() else Modifier.size(0.dp)).graphicsLayer { alpha = if (progress() < 0.001f) 0f else 1f }) {
     if (shown) Box(
         Modifier.fillMaxSize()
             .graphicsLayer { alpha = progress() }
