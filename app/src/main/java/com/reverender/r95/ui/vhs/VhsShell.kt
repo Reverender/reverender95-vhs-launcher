@@ -480,6 +480,20 @@ internal fun VhsHeader(title: String, sub: String) {
     }
 }
 
+/** one-line version of [VhsHeader] */
+@Composable
+internal fun VhsHeader1(title: String) {
+    val o = LocalOsd.current
+    Box(Modifier.fillMaxWidth().padding(bottom = pxDp(2f))) {
+        Canvas(Modifier.matchParentSize()) {
+            val px = o.px
+            glowRect(o.fg, Offset.Zero, Size(size.width - px, size.height - px), px, px * 0.5f)
+            for ((col, off) in listOf(Color.Black.copy(alpha = 0.7f) to px * 0.6f, o.fg to 0f))
+                drawRect(col, Offset(off, off), Size(size.width - px, size.height - px), style = Stroke(px * 0.5f))
+        }
+        Column(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) { VhsText(title) }
+    }
+}
 
 // ---------------------------------------------------------------- CRT
 
@@ -1022,7 +1036,10 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
             }
         }
     }, body = {
-        VhsHeader(OsPrefs.vhsTitle1, OsPrefs.vhsTitle2)
+        // the title bars: both lines empty (SETUP's TITLE1 / TITLE2) → no bars at all, one empty → a single bar
+        val t1 = OsPrefs.vhsTitle1.trim(); val t2 = OsPrefs.vhsTitle2.trim()
+        if (t1.isNotEmpty() && t2.isNotEmpty()) VhsHeader(t1, t2)
+        else if (t1.isNotEmpty() || t2.isNotEmpty()) VhsHeader1(t1.ifEmpty { t2 })
         // swipe up opens the phone keyboard for this search; its enter key launches the top match
         // APPS or RADIO: what the search finds (tap the word in front of the search line to switch)
         var radioMode by remember { mutableStateOf(false) }
@@ -1564,14 +1581,11 @@ private class VhsTheme(val name: String, val bg: Long, val fg: Long, val wall: I
 }
 private val VHS_THEMES = listOf(
     VhsTheme("VCR BLUE", 0xFF1A1AD0, 0xFFFFFFFF, -1, 0, 0.5f, 0.3f),
-    VhsTheme("MALLSOFT", 0xFFFFB3DE, 0xFF3A1F5D, 3, 3, 0.3f, 0.3f, grad = 0),
+    VhsTheme("MALLSOFT", 0xFFFFB3DE, 0xFF3A1F5D, 2, 3, 0.3f, 0.3f, grad = 0),
     VhsTheme("PLAZA MIX", 0xFF3A1F5D, 0xFFFFB3DE, -1, 6, 0.35f, 0.4f, grad = 2, mix = true),
     VhsTheme("VAPORWAVE", 0xFFFF6EC7, 0xFFFFFFFF, -1, 8, 0.45f, 0.5f, grad = 1),
-    VhsTheme("CAMCORDER", 0xFF050505, 0xFFFFFFFF, 0, 0, 0.35f, 0.3f),
     VhsTheme("CHANNEL SURF", 0xFF050505, 0xFF39FF14, 1, 4, 0.6f, 0.5f),
-    VhsTheme("TAPE TOWER", 0xFF3B0A6E, 0xFFFF6EC7, 2, 6, 0.4f, 0.5f),
-    VhsTheme("TV WALL", 0xFF050505, 0xFF5CF6FF, 4, 7, 0.5f, 0.45f),
-    VhsTheme("VIDEO STORE", 0xFF0A0A5A, 0xFFFFF04A, 5, 1, 0.4f, 0.4f),
+    VhsTheme("TAPE TOWER", 0xFF3B0A6E, 0xFFFF6EC7, 0, 6, 0.4f, 0.5f),
     VhsTheme("MIAMI", 0xFF2DE2E6, 0xFFFFFFFF, -1, 2, 0.4f, 0.45f, grad = 3),
     VhsTheme("SEAPUNK", 0xFF00FFD1, 0xFF3A1F5D, -1, 3, 0.4f, 0.4f, grad = 5),
     VhsTheme("GREEN SCREEN", 0xFF050505, 0xFF39FF14, -1, 4, 0.3f, 0.2f),
@@ -2025,10 +2039,31 @@ private fun Modifier.uiMotionBlur(amount: Float): Modifier {
 /** hold the clock or the date: open the phone's clock app */
 private fun openClockApp(ctx: android.content.Context) {
     Haptics.clunk("play")
-    val i = android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { ctx.startActivity(i) }.onFailure {
-        runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory("android.intent.category.APP_CLOCK").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    // 1) the phone's own clock app, found among the installed apps (same way the apps drawer starts apps;
+    //    the alarm intents below are missing or point somewhere odd on several makers' phones)
+    val known = listOf(
+        "com.google.android.deskclock", "com.sec.android.app.clockpackage", "com.android.deskclock", "com.oneplus.deskclock",
+        "com.coloros.alarmclock", "com.oplus.alarmclock", "com.huawei.deskclock", "com.hihonor.deskclock", "com.miui.clock",
+        "com.motorola.timeweatherwidget", "com.asus.deskclock", "com.lge.clock", "com.sonymobile.alarm", "com.vivo.alarmclock",
+        "com.transsion.deskclock", "com.nothing.deskclock",
+    )
+    val app = known.firstNotNullOfOrNull { pk -> Launcher.apps.firstOrNull { it.component.packageName == pk } }
+        ?: Launcher.apps.firstOrNull { it.label.trim().equals("clock", true) || it.label.trim().equals("klok", true) }
+        ?: Launcher.apps.firstOrNull { it.component.packageName.contains("clock", true) }
+    if (app != null) { android.util.Log.i("r95", "clock: ${app.component}"); Launcher.launch(ctx, app, fullScreen = true); return }
+    // 2) the launch intent of any known clock package (the app list may not be loaded yet)
+    val pm = ctx.packageManager
+    for (pk in known) {
+        val li = runCatching { pm.getLaunchIntentForPackage(pk) }.getOrNull() ?: continue
+        if (runCatching { ctx.startActivity(li.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
     }
+    // 3) the standard ways
+    val tries = listOf(
+        android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS),
+        android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory("android.intent.category.APP_CLOCK"),
+    )
+    for (i in tries) if (runCatching { ctx.startActivity(i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
+    android.util.Log.w("r95", "clock: no clock app found")
 }
 
 /** Set when the screen goes off with the launcher showing: the next return plays the CRT power-on. */

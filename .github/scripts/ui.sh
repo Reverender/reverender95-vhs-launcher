@@ -24,7 +24,7 @@ adb exec-out screencap -p > "$OUT/L3b-after-lock.png"
 timeout 10 adb shell input keyevent KEYCODE_SLEEP; sleep 20
 timeout 10 adb shell input keyevent KEYCODE_WAKEUP; sleep 1; timeout 10 adb shell input keyevent 82; sleep 1; timeout 10 adb shell wm dismiss-keyguard; sleep 5
 adb exec-out screencap -p > "$OUT/L4-after-long-lock.png"
-for wi in 0 1 2 3 4 5; do
+for wi in 0 1 2; do
   timeout 20 adb shell am force-stop $VPKG
   timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi --ei r95_vhs_viz $((wi % 9)) --ei r95_vhs_font $((wi % 7)) --ef r95_vhs_uiblur $([ $wi = 3 ] && echo 0.8 || echo 0) >/dev/null; sleep 6
   adb exec-out screencap -p > "$OUT/W$wi-wall.png"
@@ -34,7 +34,7 @@ timeout 20 adb shell am force-stop $VPKG; timeout 20 adb shell am start -n "$VPK
 timeout 10 adb shell input tap $((W*90/100)) $((H*30/100)); sleep 2
 echo "after right tap: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)"
 timeout 10 adb shell input swipe $((W*78/100)) $((H*55/100)) $((W*78/100)) $((H*55/100)) 900; sleep 3
-echo "after clock hold: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)"
+echo "after clock hold: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)""; adb logcat -d | grep "r95 *: clock" | tail -2
 # wide screen: rotate to landscape — home menu + LOAD side by side, nothing cut off
 timeout 10 adb shell settings put system accelerometer_rotation 0
 timeout 10 adb shell settings put system user_rotation 1; sleep 5
@@ -136,13 +136,23 @@ timeout 25 adb shell input swipe $((W*30/100)) $((H*30/100)) $((W*30/100)) $((H*
 timeout 25 adb exec-out screencap -p > "$OUT/13b-vhs-eq-drag.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 1.5
 # setup: THEME twice
+timeout 25 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 3
 timeout 25 adb shell input tap $((W/2)) $((H*97/100)); sleep 1.5
+timeout 25 adb exec-out screencap -p > "$OUT/14a-setup.png"
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 1
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 2
 timeout 25 adb exec-out screencap -p > "$OUT/14-vhs-theme.png"
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 2
 timeout 25 adb exec-out screencap -p > "$OUT/14b-vhs-theme.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 2
+# empty titles: no title bars on the home screen
+timeout 20 adb shell am force-stop $VPKG
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "|" >/dev/null; sleep 5
+timeout 25 adb exec-out screencap -p > "$OUT/T0-no-titles.png"
+timeout 20 adb shell am force-stop $VPKG
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "MY VCR|" >/dev/null; sleep 5
+timeout 25 adb exec-out screencap -p > "$OUT/T1-one-title.png"
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "VHS/VCR MENU|REVERENDER 95" >/dev/null; sleep 2
 # vaporwave colours: each multicolour background, the last with PASTEL MIX text
 for gi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG

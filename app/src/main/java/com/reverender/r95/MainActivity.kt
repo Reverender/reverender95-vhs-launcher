@@ -147,6 +147,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         intent?.getIntExtra("r95_vhs_wall", -2)?.takeIf { it >= -1 }?.let { com.reverender.r95.os.OsPrefs.setVhsWall(it) }
         intent?.getIntExtra("r95_vhs_viz", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsVizTheme(it) }
         intent?.getIntExtra("r95_vhs_font", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsFont(it) }
+        // --es r95_vhs_titles "LINE1|LINE2": the two home-screen title lines
+        intent?.getStringExtra("r95_vhs_titles")?.let { t -> val parts = (t + "|").split("|"); com.reverender.r95.os.OsPrefs.setVhsTitles(parts[0], parts[1]) }
         // --ei r95_vhs_grad N (-1 off) / --ez r95_vhs_mix true: multicolour background / pastel text
         intent?.getIntExtra("r95_vhs_grad", -2)?.takeIf { it >= -1 }?.let { g ->
             com.reverender.r95.os.OsPrefs.setVhsGrad(g)

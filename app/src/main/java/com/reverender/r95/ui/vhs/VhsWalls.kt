@@ -39,7 +39,7 @@ import kotlin.math.sin
  * The CRT motion blur (BGBLUR) repeats only the moving middle, a moment earlier and faint.
  */
 object VhsWalls {
-    val names = listOf("CAMCORDER", "CHANNEL SURF", "TAPE TOWER", "MALLSOFT CUBES", "TV WALL", "VIDEO STORE")
+    val names = listOf("TAPE TOWER", "CHANNEL SURF", "MALLSOFT CUBES")
 }
 
 private val PINK = Color(0xFFFF2BD6)
@@ -104,7 +104,7 @@ private interface Scene {
     fun DrawScope.overlay(s: Float) {}
 }
 
-private val SCENES: List<Scene> = listOf(Camcorder, ChannelSurf, TapeTower, MallsoftCubes, TvWall, VideoStore)
+private val SCENES: List<Scene> = listOf(TapeTower, ChannelSurf, MallsoftCubes)
 
 // ---------------------------------------------------------------- helpers
 
@@ -358,78 +358,7 @@ private fun DrawScope.osd(text: String, x: Float, y: Float, h: Float, col: Color
     drawGlyphs(text, x, y, h / 7f, Color.Black.copy(alpha = 0.6f), col)
 private fun osdW(text: String, h: Float) = text.length * 6 * h / 7f
 
-private val MONTHS = arrayOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
 private fun tc(s: Float): String { val t = s.toInt(); return "%d:%02d:%02d".format(t / 3600, t / 60 % 60, t % 60) }
-
-/** 0: through a camcorder's viewfinder — a pastel seaside sky, drifting clouds, REC blinking, the date stamp */
-private object Camcorder : Scene {
-    private val clouds = List(7) { i -> val r = rnd(i * 71L); floatArrayOf(r.nextFloat(), 0.08f + r.nextFloat() * 0.35f, 0.6f + r.nextFloat() * 0.8f, 0.004f + r.nextFloat() * 0.01f) }
-    override fun DrawScope.back() {
-        val hz = size.height * 0.62f
-        drawRect(Brush.verticalGradient(listOf(Color(0xFFF7B7D2), Color(0xFFFFD6C2), Color(0xFFFFE9C9)), 0f, hz), size = Size(size.width, hz))
-        val sun = Offset(size.width * 0.66f, hz - size.width * 0.05f)
-        glow(sun, size.width * 0.5f, Color(0xFFFFF1C9), 0.8f)
-        drawCircle(Color(0xFFFFF4D6), size.width * 0.1f, sun)
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF9FE3E0), Color(0xFF6CC6CF), Color(0xFF4FA9BF)), hz, size.height), Offset(0f, hz), Size(size.width, size.height - hz))
-        drawRect(Color(0xFFFFF4D6).copy(alpha = 0.55f), Offset(sun.x - size.width * 0.09f, hz), Size(size.width * 0.18f, 2f))
-    }
-    override fun DrawScope.move(s: Float) {
-        val hz = size.height * 0.62f
-        // handheld: the picture sways a little
-        val sx = sin(s * 0.9f) * 4f + sin(s * 2.3f) * 1.5f; val sy = cos(s * 0.7f) * 3f
-        translate(sx, sy) {
-            for (c in clouds) {
-                val x = ((c[0] + s * c[3]) % 1.3f) * size.width * 1.1f - size.width * 0.2f
-                val y = c[1] * hz; val r = size.width * 0.06f * c[2]
-                for (k in 0 until 4) drawCircle(Color.White.copy(alpha = 0.92f), r * (0.8f + 0.25f * (k % 2)), Offset(x + k * r * 0.9f, y - (k % 2) * r * 0.35f))
-                drawRect(Color.White.copy(alpha = 0.92f), Offset(x, y), Size(r * 2.7f, r * 0.8f))
-            }
-            // glitter on the water under the sun
-            val g = rnd((s * 6f).toLong())
-            for (k in 0 until 26) {
-                val z = g.nextFloat(); val y = hz + (size.height - hz) * z * z
-                val half = size.width * (0.01f + 0.08f * z) * g.nextFloat()
-                val x = size.width * 0.66f + (g.nextFloat() - 0.5f) * size.width * (0.1f + 0.5f * z)
-                drawLine(Color.White.copy(alpha = 0.5f + 0.4f * g.nextFloat()), Offset(x - half, y), Offset(x + half, y), 1.5f + 2f * z)
-            }
-            // a gull now and then
-            val q = (s * 0.05f) % 1f
-            val gp = Offset(size.width * (1.1f - 1.3f * q), hz * (0.3f + 0.1f * sin(s)))
-            val flap = sin(s * 6f) * 6f
-            drawLine(Color(0xFF5A4A6A), gp, gp + Offset(-10f, -flap), 1.6f); drawLine(Color(0xFF5A4A6A), gp, gp + Offset(10f, -flap), 1.6f)
-        }
-    }
-    override fun DrawScope.front() {
-        val m = size.minDimension * 0.06f; val l = size.minDimension * 0.08f; val w = 3f
-        val c = Color.White.copy(alpha = 0.9f)
-        for ((x, y, dx, dy) in listOf(listOf(m, m, 1f, 1f), listOf(size.width - m, m, -1f, 1f), listOf(m, size.height - m, 1f, -1f), listOf(size.width - m, size.height - m, -1f, -1f))) {
-            drawLine(c, Offset(x, y), Offset(x + dx * l, y), w); drawLine(c, Offset(x, y), Offset(x, y + dy * l), w)
-        }
-        // focus box in the middle
-        val fb = size.minDimension * 0.07f
-        drawRect(c.copy(alpha = 0.6f), Offset(size.width / 2 - fb, size.height * 0.45f - fb * 0.7f), Size(fb * 2, fb * 1.4f), style = Stroke(1.5f))
-    }
-    override fun DrawScope.overlay(s: Float) {
-        val h = size.minDimension * 0.045f; val m = size.minDimension * 0.1f
-        if ((s * 1.6f).toInt() % 2 == 0) drawCircle(Color(0xFFFF2030), h * 0.45f, Offset(m + h * 0.45f, m + h * 0.5f))
-        osd("REC", m + h * 1.2f, m, h)
-        osd("SP", size.width - m - osdW("SP", h), m, h)
-        osd(tc(s), size.width - m - osdW(tc(s), h), m + h * 1.6f, h)
-        // battery
-        val bx = size.width - m - h * 2.6f; val by = m + h * 3.3f
-        drawRect(Color.White, Offset(bx, by), Size(h * 2.2f, h), style = Stroke(1.5f)); drawRect(Color.White, Offset(bx + h * 2.2f, by + h * 0.3f), Size(h * 0.25f, h * 0.4f))
-        for (k in 0 until 3) drawRect(Color.White, Offset(bx + h * 0.2f + k * h * 0.66f, by + h * 0.2f), Size(h * 0.5f, h * 0.6f))
-        // zoom bar
-        val zx = m; val zy = size.height - m - h * 3.4f
-        osd("W", zx, zy, h); osd("T", zx + h * 7.5f, zy, h)
-        drawLine(Color.White, Offset(zx + h * 1.2f, zy + h / 2), Offset(zx + h * 7f, zy + h / 2), 1.5f)
-        val zp = 0.5f + 0.4f * sin(s * 0.2f)
-        drawRect(Color.White, Offset(zx + h * 1.2f + zp * h * 5.6f, zy), Size(h * 0.35f, h))
-        val cal = java.util.Calendar.getInstance()
-        val date = "${MONTHS[cal.get(java.util.Calendar.MONTH)]} ${cal.get(java.util.Calendar.DAY_OF_MONTH).toString().padStart(2, ' ')} 1995"
-        osd(date, size.width - m - osdW(date, h), size.height - m - h * 1.2f, h, Color(0xFFFFE08A))
-    }
-}
 
 /** 1: flipping through channels — snow, then a picture for a moment, the channel number in green */
 private object ChannelSurf : Scene {
@@ -475,7 +404,7 @@ private object ChannelSurf : Scene {
     }
 }
 
-/** 2: a tower of VHS tapes turning slowly, reels spinning, over a dusky neon grid */
+/** 0: a tower of VHS tapes turning slowly, reels spinning, over a dusky neon grid */
 private object TapeTower : Scene {
     private val boxes = List(5) { Box3(0f, 0f, 0f, 1.25f, 0.17f, 0.72f, col = Color(0xFF1C1626), edge = Color(0xFF8A6BFF)) }
     override fun DrawScope.back() {
@@ -513,7 +442,7 @@ private object TapeTower : Scene {
     }
 }
 
-/** 3: an empty pastel mall after hours — checker floor, arches, palms, pastel cubes floating and turning */
+/** 2: an empty pastel mall after hours — checker floor, arches, palms, pastel cubes floating and turning */
 private object MallsoftCubes : Scene {
     private val cubes = List(5) { i -> val r = rnd(i * 37L); Box3(0f, 0f, 0f, 0.28f + r.nextFloat() * 0.15f, 0f, 0f, col = listOf(Color(0xFFFFB3DE), Color(0xFF9FFFE0), Color(0xFFC9A0FF), Color(0xFFFFCBA4), Color(0xFF9BE7FF))[i]).also { it.hy = it.hx; it.hz = it.hx } }
     private val seeds = List(5) { i -> val r = rnd(i * 91L); floatArrayOf(r.nextFloat() * 2 - 1, r.nextFloat(), r.nextFloat() * 6.28f) }
@@ -543,12 +472,6 @@ private object MallsoftCubes : Scene {
             p.lineTo(size.width / 2 + (c + 1) * cw * s1, y1); p.lineTo(size.width / 2 + c * cw * s1, y1); p.close()
             drawPath(p, Color(0xFF8E7BB8).copy(alpha = 0.55f))
         }
-        // potted palms at the sides
-        for (side in 0..1) {
-            val x = if (side == 0) size.width * 0.08f else size.width * 0.92f; val base = size.height * 0.86f
-            drawRect(Color(0xFFFFCBA4), Offset(x - 18f, base - 26f), Size(36f, 26f))
-            for (k in 0 until 7) { val a = -PI.toFloat() * (0.1f + k * 0.13f); drawLine(Color(0xFF6FBF8E), Offset(x, base - 26f), Offset(x + cos(a) * 60f, base - 26f + sin(a) * 70f), 7f, StrokeCap.Round) }
-        }
     }
     override fun DrawScope.move(s: Float) {
         cubes.forEachIndexed { i, b ->
@@ -567,99 +490,3 @@ private object MallsoftCubes : Scene {
     }
 }
 
-/** 4: a curved wall of TV sets, each on its own channel, the wall turning gently */
-private object TvWall : Scene {
-    private const val COLS = 5; private const val ROWS = 4
-    private val sets = List(COLS * ROWS) { Box3(0f, 0f, 0f, 0.42f, 0.32f, 0.3f, col = Color(0xFF2A2A33), edge = Color(0xFF8A8AA0)) }
-    override fun DrawScope.back() {
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF0A0614), Color(0xFF1C0C2E))))
-        glow(Offset(size.width / 2, size.height * 0.45f), size.maxDimension * 0.6f, Color(0xFF3A6BFF), 0.25f)
-    }
-    override fun DrawScope.move(s: Float) {
-        val yaw = sin(s * 0.18f) * 0.35f
-        sets.forEachIndexed { i, b ->
-            val c = i % COLS; val r = i / COLS
-            val a = (c - (COLS - 1) / 2f) * 0.34f + yaw
-            b.x = sin(a) * 2.6f; b.z = 1.4f - cos(a) * 2.6f + 2.6f; b.y = (r - (ROWS - 1) / 2f) * 0.72f
-            b.ay = a; b.ax = 0f
-            b.face = { fi, rr -> if (fi == 0) screen(rr, s, i) }
-        }
-        solids(sets, size.width / 2, size.height * 0.45f, size.minDimension * 0.55f)
-    }
-    private fun DrawScope.screen(r: Rect, s: Float, i: Int) {
-        val inner = Rect(r.left + r.width * 0.08f, r.top + r.height * 0.1f, r.right - r.width * 0.2f, r.bottom - r.height * 0.1f)
-        val ch = ((s / (2.5f + (i % 3))).toInt() + i * 3) % 6
-        when (ch) {
-            0 -> colourBars(inner)
-            1 -> with(Snow) { snow((s * 25f).toLong() + i, inner, cell = 1.2f) }
-            2 -> drawRect(Color(0xFF1A1AD0), inner.topLeft, inner.size)
-            3 -> drawRect(Brush.verticalGradient(listOf(Color(0xFFFF6EC7), Color(0xFF29F3FF)), inner.top, inner.bottom), inner.topLeft, inner.size)
-            4 -> { drawRect(NIGHT, inner.topLeft, inner.size); drawCircle(SUN2, inner.height * 0.3f, inner.center) }
-            else -> drawRect(Color(0xFF39FF14).copy(alpha = 0.5f + 0.3f * sin(s * 7f + i)), inner.topLeft, inner.size)
-        }
-        drawRect(Color(0xFF444455), Offset(r.right - r.width * 0.15f, r.top + r.height * 0.2f), Size(r.width * 0.08f, r.height * 0.08f))
-        drawRect(Color(0xFF444455), Offset(r.right - r.width * 0.15f, r.top + r.height * 0.4f), Size(r.width * 0.08f, r.height * 0.08f))
-    }
-}
-
-/** 5: late night in the video store — shelves of tapes down the aisle, a neon OPEN sign, a tape turning on the counter */
-private object VideoStore : Scene {
-    private val COVERS = listOf(Color(0xFFE8344E), Color(0xFF1E5BD6), Color(0xFFF2C230), Color(0xFF1E9E5A), Color(0xFF7A2FD0), Color(0xFFEDEDED), Color(0xFF111111), Color(0xFFFF7A1A))
-    private val shelves: List<Box3> by lazy {
-        val out = ArrayList<Box3>(); val r = rnd(5)
-        for (side in listOf(-1f, 1f)) for (row in 0 until 4) {
-            var z = -1.5f
-            while (z < 9f) {
-                val w = 0.1f + r.nextFloat() * 0.04f
-                out.add(Box3(side * 1.75f, -1.05f + row * 0.55f, z, 0.12f, 0.21f, w, col = COVERS[r.nextInt(COVERS.size)], edge = Color.Black.copy(alpha = 0.5f)).also { b ->
-                    b.face = { fi, rr -> if (fi == 2 || fi == 3) drawRect(Color.White.copy(alpha = 0.85f), Offset(rr.left, rr.top + rr.height * 0.12f), Size(rr.width, rr.height * 0.12f)) }
-                })
-                z += w * 2f + 0.015f
-            }
-            // the shelf board under each row
-            out.add(Box3(side * 1.8f, -1.05f + row * 0.55f + 0.24f, 3.75f, 0.2f, 0.025f, 5.4f, col = Color(0xFF6A4A3A)))
-        }
-        out
-    }
-    private val tape = Box3(0f, 0.25f, -1.2f, 0.36f, 0.06f, 0.2f, col = Color(0xFF1C1626), edge = Color(0xFFFF6EC7))
-    override fun DrawScope.back() {
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF1A1030), Color(0xFF2E1A48), Color(0xFF3A2050))))
-        val cx = size.width / 2; val cy = size.height * 0.42f; val sc = size.minDimension * 0.5f
-        // carpet: a dark aisle with a faint pattern running to the back
-        val fl = Path(); fl.moveTo(0f, size.height); fl.lineTo(size.width, size.height)
-        fl.lineTo(cx + 1.6f * 4f / 14f * sc, cy + 1f * 4f / 14f * sc); fl.lineTo(cx - 1.6f * 4f / 14f * sc, cy + 1f * 4f / 14f * sc); fl.close()
-        drawPath(fl, Brush.verticalGradient(listOf(Color(0xFF20123A), Color(0xFF3B1E5E)), cy, size.height))
-        for (k in 0 until 14) { val z = k * 0.7f - 1.5f; val f = 4f / (z + 5f); val y = cy + 1f * f * sc
-            drawLine(Color(0xFFFF6EC7).copy(alpha = 0.12f), Offset(cx - 1.6f * f * sc, y), Offset(cx + 1.6f * f * sc, y), 1f) }
-        // ceiling lights
-        for (k in 0 until 6) { val z = k * 1.6f - 0.5f; val f = 4f / (z + 5f); val y = cy - 1.6f * f * sc
-            drawRect(Color(0xFFEFF6FF).copy(alpha = 0.9f), Offset(cx - 0.35f * f * sc, y - 3f * f), Size(0.7f * f * sc, 6f * f))
-            glow(Offset(cx, y), 0.6f * f * sc, Color(0xFFB8D8FF), 0.25f) }
-        solids(shelves, cx, cy, sc)
-        // back wall at the end of the aisle with a poster
-        val f = 4f / (9f + 5f); val bw = 1.6f * f * sc; val bh = 1.3f * f * sc
-        drawRect(Color(0xFF241536), Offset(cx - bw, cy - bh), Size(bw * 2, bh * 1.75f))
-        drawRect(Brush.verticalGradient(listOf(Color(0xFFFF6EC7), Color(0xFF29F3FF))), Offset(cx - bw * 0.3f, cy - bh * 0.8f), Size(bw * 0.6f, bh * 0.9f))
-    }
-    override fun DrawScope.move(s: Float) {
-        val cx = size.width / 2; val cy = size.height * 0.42f; val sc = size.minDimension * 0.5f
-        // neon OPEN sign hanging up front, flickering now and then
-        val flick = if (rnd((s * 8f).toLong()).nextFloat() < 0.06f) 0.25f else 1f
-        val h = size.minDimension * 0.07f
-        val w = osdW("OPEN", h)
-        val sx = cx - w / 2; val sy = size.height * 0.08f
-        glow(Offset(cx, sy + h / 2), w * 0.9f, PINK, 0.35f * flick)
-        drawRect(PINK.copy(alpha = 0.9f * flick), Offset(sx - h * 0.4f, sy - h * 0.4f), Size(w + h * 0.8f, h * 1.8f), style = Stroke(2.5f))
-        drawGlyphs("OPEN", sx, sy, h / 7f, PINK.copy(alpha = 0.4f * flick), lighten(PINK).copy(alpha = flick))
-        val h2 = h * 0.45f; val t2 = "BE KIND REWIND"
-        drawGlyphs(t2, cx - osdW(t2, h2) / 2, sy + h * 2f, h2 / 7f, CYAN.copy(alpha = 0.3f), lighten(CYAN))
-        // a tape turning slowly on the counter in the foreground
-        tape.ay = s * 0.6f; tape.ax = -0.5f
-        tape.face = { fi, r -> if (fi == 4) {
-            drawRect(Color(0xFFF2EBD9), Offset(r.left + r.width * 0.12f, r.top + r.height * 0.15f), Size(r.width * 0.76f, r.height * 0.25f))
-            for (k in 0..1) drawCircle(Color(0xFFDDDDDD), minOf(r.width * 0.07f, r.height * 0.12f), Offset(r.left + r.width * (0.36f + 0.28f * k), r.top + r.height * 0.65f))
-        } }
-        val counter = Box3(0f, 0.55f, -1.2f, 0.9f, 0.25f, 0.4f, col = Color(0xFF3A2A5A), edge = Color(0xFF29F3FF))
-        solids(listOf(counter, tape), cx, cy, sc)
-    }
-}
