@@ -261,7 +261,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
         val err = VhsChats.send(ctx, c.key, t)
         if (err == null) { draft = ""; Haptics.clunk("play") } else { msg = err; Haptics.tick() }
     }
-    RegisterKb(VhsKb({ draft }, { draft = it.take(600) }, { send() }, raw = true))
+    RegisterKb(VhsKb({ draft }, { draft = it.take(600) }, raw = true) { send() })
     LaunchedEffect(c.msgs.size) { VhsChats.seen(ctx, c.key) }
     VhsHeader(vhsSafe(c.name).trim().take(20), if (VhsChats.canReply(c.key)) "WHATSAPP  REPLY ON" else "WHATSAPP  READ ONLY")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2.5f)), verticalAlignment = Alignment.CenterVertically) {

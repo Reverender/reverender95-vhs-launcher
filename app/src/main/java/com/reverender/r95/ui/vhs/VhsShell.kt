@@ -317,7 +317,7 @@ internal fun VhsLetterPad(onChar: (Char) -> Unit) {
 }
 
 /** A search field the phone keyboard can type into (swipe up); [enter] runs on the keyboard's enter key. */
-internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val enter: () -> Unit, val raw: Boolean = false)
+internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val raw: Boolean = false, val enter: () -> Unit)
 internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime.mutableStateOf<VhsKb?>(null) }
 
 /** While composed, swipe up types into this field. */
@@ -325,7 +325,7 @@ internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime
 internal fun RegisterKb(kb: VhsKb) {
     val holder = LocalKbHolder.current
     val cur by androidx.compose.runtime.rememberUpdatedState(kb)
-    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, { cur.enter() }, kb.raw) }
+    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, kb.raw) { cur.enter() } }
     androidx.compose.runtime.DisposableEffect(proxy) {
         holder.value = proxy
         onDispose { if (holder.value === proxy) holder.value = null }
