@@ -27,6 +27,13 @@ timeout 20 adb exec-out screencap -p > "$OUT/N4-chats.png"
 adb logcat -d | grep "r95 *: swipe" | tail -5
 adb shell input tap $((W/3)) $((H*25/100)); sleep 3
 timeout 20 adb exec-out screencap -p > "$OUT/N5-chat.png"
+# menu switch effect: back to the list, then back to the home screen, caught mid-switch
+adb shell input keyevent KEYCODE_BACK; sleep 1.5
+adb shell input keyevent KEYCODE_BACK; sleep 0.12
+timeout 20 adb exec-out screencap -p > "$OUT/S1-switch.png"; sleep 1.5
+adb shell input tap $((W/2)) $((H-22)); sleep 0.2
+timeout 20 adb exec-out screencap -p > "$OUT/S2-switch.png"; sleep 1.5
+timeout 20 adb exec-out screencap -p > "$OUT/S3-settled.png"
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 [ "$ONLY" = notif ] && exit 0

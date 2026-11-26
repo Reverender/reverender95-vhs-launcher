@@ -717,6 +717,15 @@ fun VhsShell(onShutDown: () -> Unit) {
     val ctx = LocalContext.current
     val state = LocalAppState.current
     var screen by remember { mutableStateOf(Screen.MAIN) }
+    // switching menus: a short "channel change" (0 = just switched … 1 = settled)
+    val switchP = remember { androidx.compose.animation.core.Animatable(1f) }
+    var lastScreen by remember { mutableStateOf(screen) }
+    LaunchedEffect(screen) {
+        if (screen == lastScreen) return@LaunchedEffect
+        lastScreen = screen
+        switchP.snapTo(0f)
+        switchP.animateTo(1f, androidx.compose.animation.core.tween(420, easing = androidx.compose.animation.core.LinearEasing))
+    }
     var chooseDir by remember { mutableStateOf("up") }
     val bg = Color(OsPrefs.vhsBg.toInt()); val fg = Color(OsPrefs.vhsFg.toInt())
     LaunchedEffect(Unit) { Launcher.load(ctx) }
@@ -861,6 +870,16 @@ fun VhsShell(onShutDown: () -> Unit) {
                         // tape tearing: the picture slips sideways during a tracking burst
                         val gl = if (crt) sched.at(clock.longValue, px, track) else NO_GLITCH
                         translationX = gl.tearX; translationY = gl.jitterY
+                        // menu switch: the new picture rolls down into place (vertical hold), slips sideways a
+                        // little, and comes up out of the dark, like a VCR finding the signal
+                        val sp = switchP.value
+                        if (sp < 1f) {
+                            val e = 1f - sp
+                            translationY += -size.height * 0.10f * e * e * e + kotlin.math.sin(sp * 30f) * px * 1.5f * e
+                            translationX += (java.util.Random((sp * 60).toLong()).nextFloat() - 0.5f) * px * 5f * e * e
+                            alpha = (sp * 2.2f - 0.15f).coerceIn(0f, 1f)
+                            scaleY = 1f + 0.04f * e * e
+                        }
                     }
                     .pointerInput(screen, widthPx) {
                         val min = 60.dp.toPx()
@@ -940,6 +959,7 @@ fun VhsShell(onShutDown: () -> Unit) {
             if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onClose = { settleDrawer(false) })
         }
       }
+      if (switchP.value < 1f) VhsSwitchFx({ switchP.value })
       if (crt) CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsCrt(clock, g, sched, track) }
       // full-screen video sits above everything: edge to edge, no CRT
       if (screen == Screen.VIDEO && deck.mode == "video" && deck.fullscreen && deck.loaded)
@@ -2199,6 +2219,41 @@ private fun openClockApp(ctx: android.content.Context) {
     )
     for (i in tries) if (runCatching { ctx.startActivity(i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
     android.util.Log.w("r95", "clock: no clock app found")
+}
+
+/**
+ * The noise over a menu switch: a burst of snow that clears, a bright tracking bar running down the picture
+ * and a few torn lines, all gone after ~0.4 s.
+ */
+@Composable
+private fun VhsSwitchFx(p: () -> Float) {
+    val tile = remember {
+        val r = java.util.Random(3)
+        val b = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888)
+        for (y in 0 until 96) for (x in 0 until 96) { val v = r.nextInt(256); b.setPixel(x, y, android.graphics.Color.argb(255, v, v, v)) }
+        android.graphics.BitmapShader(b, android.graphics.Shader.TileMode.REPEAT, android.graphics.Shader.TileMode.REPEAT)
+    }
+    val brush = remember { androidx.compose.ui.graphics.ShaderBrush(tile) }
+    val m = remember { android.graphics.Matrix() }
+    Canvas(Modifier.fillMaxSize()) {
+        val sp = p()
+        val e = 1f - sp
+        val r = java.util.Random((sp * 90).toLong() * 7919)
+        // snow, clearing as the picture comes in
+        m.setScale(2.5f, 2.5f); m.postTranslate(r.nextFloat() * 240f, r.nextFloat() * 240f); tile.setLocalMatrix(m)
+        drawRect(brush, alpha = (e * 1.25f - 0.2f).coerceIn(0f, 0.85f))
+        // the tracking bar rolling down
+        val y = size.height * (sp * 1.3f - 0.15f)
+        val h = size.height * 0.07f
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f * e), Color.Transparent), y - h, y + h), Offset(0f, y - h), Size(size.width, h * 2))
+        // torn lines
+        repeat((14 * e).toInt()) {
+            val ly = r.nextFloat() * size.height
+            drawRect(Color.White.copy(alpha = 0.25f + 0.5f * r.nextFloat() * e), Offset(r.nextFloat() * size.width * 0.6f, ly), Size(size.width * (0.1f + r.nextFloat() * 0.5f), 1.5f + r.nextFloat() * 3f))
+        }
+        // the black between channels at the very start
+        if (sp < 0.12f) drawRect(Color.Black.copy(alpha = 1f - sp / 0.12f))
+    }
 }
 
 /** Set when the screen goes off with the launcher showing: the next return plays the CRT power-on. */
