@@ -873,7 +873,9 @@ fun VhsShell(onShutDown: () -> Unit) {
                             while (true) {
                                 val ev = awaitPointerEvent()
                                 val c = ev.changes.firstOrNull { it.id == down.id } ?: break
-                                if (c.isConsumed) used = true
+                                // a slider / scroll taking the drag counts; a tap detector taking the lift-off doesn't (a
+                                // full-width box such as the spectrum takes a swipe's release as a "tap")
+                                if (c.pressed && c.isConsumed) used = true
                                 end = c.position
                                 vt.addPosition(c.uptimeMillis, c.position)
                                 val ddx = end.x - down.position.x; val ddy = end.y - down.position.y
