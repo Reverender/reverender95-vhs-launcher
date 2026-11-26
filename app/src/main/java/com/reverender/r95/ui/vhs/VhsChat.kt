@@ -269,7 +269,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
     }
     Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onExit() } }) {
         Column {
-            VhsText("TAP CHAT  SWIPE: REMOVE", invert = true)
+            VhsText("SWIPE CHAT TO REMOVE", invert = true)
             VhsText("TAP HERE TO RETURN", invert = true)
         }
     }
