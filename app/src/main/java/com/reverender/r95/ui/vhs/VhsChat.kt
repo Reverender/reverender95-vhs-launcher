@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -113,7 +114,12 @@ internal object VhsChats {
         if (title.isEmpty()) return
         val key = (if (android.os.Build.VERSION.SDK_INT >= 26) n.shortcutId else null) ?: title
         val c = chat(key) ?: Chat(key, title).also { chats.add(0, it) }
-        c.name = title.replace(Regex("\\s*\\(\\d+ (berichten|messages)\\)$"), "")
+        // 1:1 chats: the contact's name from their own messages (after you reply, WhatsApp's update can carry
+        // your own name, "You", as the title)
+        val them = style.messages.lastOrNull { val nm = it.person?.name?.toString(); nm != null && nm != me }?.person?.name?.toString()
+        val nm = (if (style.isGroupConversation) title else them ?: title).replace(Regex("\\s*\\(\\d+ (berichten|messages)\\)$"), "")
+        val selfish = nm == me || nm.equals("you", true) || nm.equals("jij", true) || nm.equals("u", true)
+        if (!selfish || c.msgs.isEmpty()) c.name = nm
         c.group = style.isGroupConversation
         var added = 0
         for (m in style.messages) {
@@ -214,8 +220,10 @@ internal fun VhsChat(onExit: () -> Unit) {
     val o = LocalOsd.current
     remember { VhsChats.load(ctx) }
     val key = VhsChats.open
-    BackHandler(enabled = key != null) { VhsChats.open = null }
-    Column(Modifier.fillMaxSize().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
+    // back: chat -> chat list -> home, one step per press
+    BackHandler { if (VhsChats.open != null) VhsChats.open = null else onExit() }
+    // the phone keyboard pushes the chat up, so the reply line stays in view
+    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
         val c = VhsChats.chat(key)
         if (c == null) ChatList(onExit) else ChatView(c)
     }
@@ -322,8 +330,9 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
     // the reply line: tap it for the keyboard; enter / SEND sends
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(1.5f)), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f).pointerInput(Unit) { detectTapGestures(onLongPress = { draft = "" }) { openKb() } }) {
-            val shown = vhsSafe(draft).replace(Regex(" +"), " ")
-            VhsText(">" + (if (draft.isEmpty()) "" else shown.takeLast(14)) + if (blink) "_" else " ")
+            // what you type, wrapped (the last 3 lines), with the cursor
+            val lines = wrap(vhsSafe(draft).replace(Regex(" +"), " ") + if (blink) "_" else " ", 15).takeLast(3)
+            Column { lines.forEachIndexed { i, l -> VhsText((if (i == 0) ">" else " ") + l) } }
         }
         VhsKey("SEND", boxed = true) { send() }
     }

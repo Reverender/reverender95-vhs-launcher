@@ -736,7 +736,7 @@ fun VhsShell(onShutDown: () -> Unit) {
     // back on the main screen does nothing (as a home screen it would only restart the launcher); an open
     // phone keyboard still closes itself first. Other screens go back to the menu.
     // (switching menus no longer brings the auto-hidden help back; swipe up from the bottom edge does)
-    BackHandler(enabled = screen != Screen.MAIN && !(screen == Screen.CHAT && VhsChats.open != null)) { screen = if (screen == Screen.CHOOSE) Screen.SETUP else Screen.MAIN }
+    BackHandler(enabled = screen != Screen.MAIN && screen != Screen.CHAT) { screen = if (screen == Screen.CHOOSE) Screen.SETUP else Screen.MAIN }
 
     // ---- full screen: the status bar is hidden while the VHS menu shows (a swipe from the top edge peeks it)
     val view = androidx.compose.ui.platform.LocalView.current
