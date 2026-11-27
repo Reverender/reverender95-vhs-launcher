@@ -15,16 +15,27 @@ internal object VhsRss {
     private var loadedUrl = ""
 
     /** keeps the headlines fresh while the home screen shows; [url] blank = off */
+    /** wall-clock time of the last good load (survives sleep: timers don't run while the phone sleeps) */
+    private var lastOk = 0L
+    private var lastTry = 0L
+
+    /** keeps the headlines fresh while the launcher shows; [url] blank = off */
     suspend fun run(url: String) {
         if (url.isBlank()) { headlines = emptyList(); return }
-        if (url != loadedUrl) { headlines = emptyList(); status = "TUNING IN THE NEWS…" }
-        delay(1200) // (typing a new address: wait until it stops changing)
+        if (url != loadedUrl) { headlines = emptyList(); status = "TUNING IN THE NEWS…"; lastOk = 0L; lastTry = 0L; delay(1200) } // (typing a new address: wait until it stops changing)
         while (true) {
             com.reverender.r95.core.AppVisibility.awaitForeground() // (no fetching while the launcher isn't shown)
-            val r = runCatching { fetch(url) }
-            r.onSuccess { if (it.isNotEmpty()) { headlines = it; loadedUrl = url } else status = "NO NEWS IN THIS FEED" }
-            r.onFailure { if (headlines.isEmpty()) status = "NEWS FEED UNAVAILABLE"; android.util.Log.w("r95", "rss: $url", it) }
-            delay(if (r.isSuccess) 10 * 60_000L else 60_000L) // fresh news every 10 minutes
+            // checked by the clock on the wall: after the phone slept, or a while away from home, the news is
+            // reloaded as soon as the launcher is back
+            val now = System.currentTimeMillis()
+            val due = if (lastOk == 0L) now - lastTry >= 60_000L else now - lastOk >= 10 * 60_000L && now - lastTry >= 60_000L
+            if (due) {
+                lastTry = now
+                val r = runCatching { fetch(url) }
+                r.onSuccess { if (it.isNotEmpty()) { headlines = it; loadedUrl = url; lastOk = System.currentTimeMillis() } else status = "NO NEWS IN THIS FEED" }
+                r.onFailure { if (headlines.isEmpty()) status = "NEWS FEED UNAVAILABLE"; android.util.Log.w("r95", "rss: $url", it) }
+            }
+            delay(5_000)
         }
     }
 

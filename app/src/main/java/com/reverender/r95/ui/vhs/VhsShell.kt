@@ -140,33 +140,43 @@ private val STANDARDS = listOf(
  * so long names (radio stations, files, songs) can always be read. Moved on the GPU layer only (no redraw).
  */
 @Composable
-internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true, secPerChar: Float = 0.16f, fill: Boolean = false) {
+internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true, secPerChar: Float = 0.16f, fill: Boolean = false, swapAtLoop: Boolean = false) {
     val o = LocalOsd.current
     val d = LocalDensity.current
     val wDp = with(d) { ((cols * 6 + 1) * o.px).toDp() }
     val hDp = with(d) { (9 * o.px).toDp() }
-    val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
-    val textW = (text.length * 6 + 1) * o.px
     // [fill]: as wide as the space it's in (the title block's line), else [cols] characters
     val fieldPx = remember { androidx.compose.runtime.mutableFloatStateOf((cols * 6 + 1) * o.px) }
     val fieldW = if (fill) fieldPx.floatValue else (cols * 6 + 1) * o.px
+    // what runs now; with [swapAtLoop] (the news) a new text waits until the current one has gone all the way
+    // through, otherwise (a new song) it starts over at once
+    var shown by remember { mutableStateOf(text) }
+    // how far the current pass has run (kept while paused / hidden, so it carries on where it was)
+    val dist = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    LaunchedEffect(text) { if (!swapAtLoop && text != shown) { shown = text; dist.floatValue = 0f } }
+    val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val pageHidden = LocalPageHidden.current
-    LaunchedEffect(text, o.px, running, secPerChar, fieldW, pageHidden) {
-        // stopped: the name stands still from its first letter (and nothing runs on a hidden page)
-        if (!running) { shift.floatValue = 0f; return@LaunchedEffect }
+    val latest by androidx.compose.runtime.rememberUpdatedState(text)
+    LaunchedEffect(o.px, running, secPerChar, fieldW, pageHidden) {
+        // stopped: the name stands at the left; it carries on from there when it plays again
+        if (!running) { if (!swapAtLoop) shown = latest; dist.floatValue = fieldW; shift.floatValue = 0f; return@LaunchedEffect }
         if (pageHidden) return@LaunchedEffect
         val speed = o.px * 6 / secPerChar // a character every secPerChar seconds
-        val t0 = androidx.compose.runtime.withFrameNanos { it }
+        var last = 0L
         while (true) {
             androidx.compose.runtime.withFrameNanos { t ->
-                val run = fieldW + textW
-                shift.floatValue = fieldW - ((t - t0) / 1e9f * speed) % run
+                val dt = if (last == 0L) 0f else ((t - last) / 1e9f).coerceAtMost(0.1f)
+                last = t
+                var dd = dist.floatValue + dt * speed
+                if (dd >= fieldW + (shown.length * 6 + 1) * o.px) { dd = 0f; if (shown != latest) shown = latest } // round again
+                dist.floatValue = dd
+                shift.floatValue = fieldW - dd
             }
         }
     }
     Box(modifier.then(if (fill) Modifier.fillMaxWidth().height(hDp) else Modifier.size(wDp, hDp)).clipToBounds()
         .onSizeChanged { if (fill) fieldPx.floatValue = it.width.toFloat() }) {
-        VhsText(text, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).graphicsLayer { translationX = shift.floatValue }, color = color)
+        VhsText(shown, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).graphicsLayer { translationX = shift.floatValue }, color = color)
     }
 }
 
@@ -1201,7 +1211,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         // the title block: TITLE1 on top, the news ticker (SETUP > RSS) running through the second line
         val t1 = OsPrefs.vhsTitle1.trim(); val rss = OsPrefs.vhsRss.trim()
         LaunchedEffect(rss) { VhsRss.run(rss) }
-        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), fill = true, secPerChar = 0.34f - 0.29f * OsPrefs.vhsRssSpeed) }
+        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), fill = true, swapAtLoop = true, secPerChar = 0.34f - 0.29f * OsPrefs.vhsRssSpeed) }
         // (VHS+ APK: the notification area sits at the right end of the top bar)
         if (t1.isNotEmpty() || rss.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
             if (t1.isNotEmpty() && rss.isNotEmpty()) VhsHeader(t1, "", news)
