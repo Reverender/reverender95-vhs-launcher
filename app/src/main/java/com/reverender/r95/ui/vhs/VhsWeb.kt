@@ -112,12 +112,12 @@ internal fun VhsWeb(onExit: () -> Unit) {
         androidx.compose.runtime.LaunchedEffect(Unit) { kotlinx.coroutines.delay(50); openKb() }
     }
     // the page first, the controls drawn over it afterwards (an Android web view paints over whatever came
-    // before it on screen); the page is kept clear of the control bars by their measured heights
+    // before it on screen); the page starts below the control bar, by its measured height
     val d = androidx.compose.ui.platform.LocalDensity.current
     var topH by remember { mutableIntStateOf(0) }
-    var botH by remember { mutableIntStateOf(0) }
     Box(Modifier.fillMaxSize().imePadding()) {
-        AndroidView({ web }, Modifier.fillMaxSize().padding(top = with(d) { topH.toDp() }, bottom = with(d) { botH.toDp() }))
+        // (no bar at the bottom: BACK / HOME already lead out, so the page gets the rest of the screen)
+        AndroidView({ web }, Modifier.fillMaxSize().padding(top = with(d) { topH.toDp() }))
         Column(Modifier.fillMaxWidth().background(o.bg).onSizeChanged { topH = it.height }.padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2f)), verticalAlignment = Alignment.CenterVertically) {
                 VhsKey("◀", boxed = true) { if (web.canGoBack()) web.goBack() }
@@ -134,14 +134,6 @@ internal fun VhsWeb(onExit: () -> Unit) {
             // loading bar
             Box(Modifier.fillMaxWidth().height(pxDp(1.2f))) {
                 if (progress in 1..99) Box(Modifier.fillMaxWidth(progress / 100f).height(pxDp(1.2f)).background(o.fg))
-            }
-        }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(o.bg).onSizeChanged { botH = it.height }.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) {
-            Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onExit() } }) {
-                Column {
-                    VhsText(vhsSafe(title).trim().ifEmpty { "VHS WEB" }.take(21), invert = true)
-                    VhsText("TAP HERE TO RETURN", invert = true)
-                }
             }
         }
     }
