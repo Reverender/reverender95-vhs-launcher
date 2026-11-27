@@ -1322,7 +1322,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
             val hit = Launcher.apps.firstOrNull { it.label.uppercase().contains(query.trim()) && query.isNotBlank() }
             if (hit != null) { Launcher.launch(ctx, hit, fullScreen = true); query = "" }
         }
-        RegisterKb(VhsKb({ query }, { query = it.take(18) }) { enter() })
+        androidx.compose.runtime.key(radioMode) { RegisterKb(VhsKb({ query }, { query = it.take(18) }, label = if (radioMode) "FIND A RADIO STATION" else "FIND AN APP") { enter() }) }
         // (the phone keyboard types here: swipe up, or tap the search line)
         val openKb = LocalOpenKb.current
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(1f)), verticalAlignment = Alignment.CenterVertically) {
@@ -2350,14 +2350,14 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                 // ---- C: TELETEXT GUIDE: page 100, numbered "channels", coloured jump keys at the bottom
                 2 -> {
                     val now = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.US).format(java.util.Date()) }
-                    Box(Modifier.fillMaxWidth().background(Color(0xFF1A1AD0)).padding(pxDp(1f))) { VhsText(("P100 APPS GUIDE " + now).take(21), color = Color.White) }
+                    Box(Modifier.fillMaxWidth().background(Color(0xFF1A1AD0)).padding(pxDp(1f))) { VhsText("P100 APPS  $now", color = Color.White) }
                     Row { VhsText("CH ", color = Color(0xFFFFF04A)); VhsText("PROGRAMME", color = Color(0xFFFFF04A)) }
                     androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().weight(1f), state = list, verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
                         items(apps.size, key = { apps[it].component.toString() + it }) { i ->
                             val a = apps[i]
                             Row(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { open(a) } }) {
                                 VhsText("%02d ".format((i + 1) % 100), color = Color(0xFF5CF6FF))
-                                VhsText(vhsSafe(a.label).trim().take(17), color = Color.White)
+                                VhsText(vhsSafe(a.label).trim().take(14), color = Color.White)
                             }
                         }
                     }
