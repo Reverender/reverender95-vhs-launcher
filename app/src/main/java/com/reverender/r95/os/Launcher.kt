@@ -82,7 +82,9 @@ object Launcher {
     fun launch(ctx: Context, component: ComponentName, fullScreen: Boolean = false) {
         val i = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setComponent(component)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        val opts = if (!fullScreen && runCatching { OsPrefs.floatingApps }.getOrDefault(true)) floatingOptions(ctx) else null
+        val opts = if (!fullScreen && runCatching { OsPrefs.floatingApps }.getOrDefault(true)) floatingOptions(ctx)
+            // full screen from the launcher: the app fades in (instead of the phone's slide)
+            else runCatching { android.app.ActivityOptions.makeCustomAnimation(ctx, android.R.anim.fade_in, android.R.anim.fade_out).toBundle() }.getOrNull()
         runCatching { ctx.startActivity(i, opts) }.onFailure { runCatching { ctx.startActivity(i) } }
     }
 

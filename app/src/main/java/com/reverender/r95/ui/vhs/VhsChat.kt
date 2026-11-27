@@ -197,7 +197,7 @@ internal object VhsChats {
 }
 
 /** text cut into lines of at most [w] characters, broken between words */
-private fun wrap(s: String, w: Int): List<String> {
+internal fun wrap(s: String, w: Int): List<String> {
     val out = ArrayList<String>()
     for (para in s.split('\n')) {
         var line = ""

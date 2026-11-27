@@ -204,7 +204,7 @@ internal fun VhsGame(onExit: () -> Unit, onSwitch: (String) -> Unit = {}) {
                 VhsKey("FILE", boxed = true) { picker.launch(arrayOf("*/*")) }
                 if (g != null) VhsKey("◀GAME", boxed = true) { searching = false }
             }
-            RegisterKb(VhsKb({ query }, { query = it.take(30) }) { search() })
+            RegisterKb(VhsKb({ query }, { query = it.take(30) }, label = "FIND A GAME") { search() })
             Box(Modifier.fillMaxWidth().pointerInput(Unit) { detectTapGestures { openKb() } }) {
                 VhsText("FIND:" + query.takeLast(16) + if (blink) "_" else " ")
             }

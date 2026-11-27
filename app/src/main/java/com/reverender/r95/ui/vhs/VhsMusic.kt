@@ -98,7 +98,7 @@ internal fun VhsMusic(onExit: () -> Unit, onSwitch: (String) -> Unit, onPlayed: 
             VhsKey("YOUTUBE", selected = f.source == "YT", boxed = true) { if (f.source != "YT") { f.source = "YT"; f.hits.clear(); f.msg = null } }
             VhsKey("ARCHIVE", selected = f.source == "IA", boxed = true) { if (f.source != "IA") { f.source = "IA"; f.hits.clear(); f.msg = null } }
         }
-        RegisterKb(VhsKb({ f.query }, { f.query = it.take(24) }) { search() })
+        RegisterKb(VhsKb({ f.query }, { f.query = it.take(24) }, label = "FIND MUSIC") { search() })
         // the phone keyboard types the search: swipe up or tap the FIND line (hold it to clear)
         Box(Modifier.fillMaxWidth().pointerInput(Unit) { detectTapGestures(onLongPress = { f.query = "" }) { openKb() } }) {
             VhsText("FIND:" + f.query.takeLast(16) + if (blink) "_" else " ")

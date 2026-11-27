@@ -53,7 +53,7 @@ object OsPrefs {
             for (i in 0 until a.length()) a.optJSONObject(i)?.let { o -> vhsPlaylist.add(o.optString("n") to o.optString("u")) }
         }
         vidFxOn = p.getBoolean("vhs_vid_fx", true)
-        vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"; vhsRss = p.getString("vhs_rss", null) ?: com.reverender.r95.ui.vhs.VhsRss.DEFAULT; vhsRssSpeed = p.getFloat("vhs_rss_speed", 0.4f)
+        vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"; vhsRss = p.getString("vhs_rss", null) ?: com.reverender.r95.ui.vhs.VhsRss.DEFAULT; vhsRssSpeed = p.getFloat("vhs_rss_speed", 0.4f); vhsDrawer = p.getInt("vhs_drawer", 0)
         vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1).takeIf { it < 3 } ?: -1; vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
         vhsPic = p.getInt("vhs_pic", 0); vhsPicDim = p.getFloat("vhs_pic_dim", 0.35f)
         vidColor = p.getFloat("vhs_vid_color", 0.45f); vidBlur = p.getFloat("vhs_vid_blur", 0.25f); vidChroma = p.getFloat("vhs_vid_chroma", 0.4f); vidNoise = p.getFloat("vhs_vid_noise", 0.3f)
@@ -170,6 +170,9 @@ object OsPrefs {
     @set:JvmName("vhsTitle2Internal") var vhsTitle2 by mutableStateOf("REVERENDER 95"); private set
     /** the news ticker's feed (blank = no ticker) */
     @set:JvmName("vhsRssInternal") var vhsRss by mutableStateOf(com.reverender.r95.ui.vhs.VhsRss.DEFAULT); private set
+    /** VHS apps drawer look: 0 floating list, 1 tape shelf, 2 teletext guide, 3 pixel icon grid */
+    @set:JvmName("vhsDrawerInternal") var vhsDrawer by mutableStateOf(0); private set
+    fun setVhsDrawer(v: Int) { vhsDrawer = v; put { putInt("vhs_drawer", v) } }
     /** news ticker speed: 0 = slow … 1 = fast */
     @set:JvmName("vhsRssSpeedInternal") var vhsRssSpeed by mutableStateOf(0.4f); private set
     fun setVhsRssSpeed(v: Float) { vhsRssSpeed = v.coerceIn(0f, 1f); put { putFloat("vhs_rss_speed", vhsRssSpeed) } }

@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -386,11 +387,35 @@ internal fun VhsLetterPad(onChar: (Char) -> Unit) {
     }
 }
 
+/** The line being typed (with its name), on a panel just above the phone keyboard. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun VhsKbPreview(kb: VhsKb?) {
+    if (kb?.label == null || !androidx.compose.foundation.layout.WindowInsets.isImeVisible) return
+    val o = LocalOsd.current
+    val blink = rememberBlink()
+    Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.BottomCenter) {
+        Column(
+            Modifier.fillMaxWidth().background(o.bg.copy(alpha = 0.96f)).drawBehind {
+                drawRect(o.fg, Offset.Zero, Size(size.width, o.px * 0.6f))
+            }.padding(horizontal = pxDp(2f), vertical = pxDp(2f)),
+            verticalArrangement = Arrangement.spacedBy(pxDp(1.2f)),
+        ) {
+            VhsText(kb.label, invert = true)
+            val lines = wrap(vhsSafe(kb.get()).replace(Regex(" +"), " ") + if (blink) "_" else " ", 20).takeLast(4)
+            lines.forEach { VhsText(it) }
+        }
+    }
+}
+
+/** tape-spine colours for the TAPE SHELF drawer */
+private val SPINES = listOf(Color(0xFFFF6EC7), Color(0xFF29F3FF), Color(0xFFFFD319), Color(0xFF9DFF5C), Color(0xFFA06BFF), Color(0xFFFF2FA0), Color(0xFFFF7A2E))
+
 /** true for a page kept composed but hidden behind another menu */
 internal val LocalPageHidden = androidx.compose.runtime.compositionLocalOf { false }
 
 /** A search field the phone keyboard can type into (swipe up); [enter] runs on the keyboard's enter key. */
-internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val raw: Boolean = false, val enter: () -> Unit)
+internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val raw: Boolean = false, val label: String? = null, val enter: () -> Unit)
 internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime.mutableStateOf<VhsKb?>(null) }
 
 /** While composed, swipe up types into this field. */
@@ -399,7 +424,7 @@ internal fun RegisterKb(kb: VhsKb) {
     if (LocalPageHidden.current) return // a page kept alive behind another menu doesn't take the keyboard
     val holder = LocalKbHolder.current
     val cur by androidx.compose.runtime.rememberUpdatedState(kb)
-    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, kb.raw) { cur.enter() } }
+    val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, kb.raw, kb.label) { cur.enter() } }
     androidx.compose.runtime.DisposableEffect(proxy) {
         holder.value = proxy
         onDispose { if (holder.value === proxy) holder.value = null }
@@ -837,6 +862,11 @@ fun VhsShell(onShutDown: () -> Unit) {
     val kbFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val kbCtl = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val focusMgr = androidx.compose.ui.platform.LocalFocusManager.current
+    // an app was started (from the search, the drawer, a swipe): put the keyboard away, so it isn't still up
+    // when you come back
+    LaunchedEffect(Unit) {
+        androidx.compose.runtime.snapshotFlow { com.reverender.r95.core.AppVisibility.visible }.collect { v -> if (!v) { kbCtl?.hide(); focusMgr.clearFocus() } }
+    }
     var kbText by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     fun openKb() {
         val t = kbHolder.value?.get().orEmpty()
@@ -1050,6 +1080,8 @@ fun VhsShell(onShutDown: () -> Unit) {
                 }
             }
             if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onClose = { settleDrawer(false) })
+            // typing in a menu (SETUP, the decks' searches): what you type shows just above the keyboard
+            VhsKbPreview(kbHolder.value)
         }
       }
       if (switchP.floatValue < 1f) VhsSwitchFx({ switchP.floatValue })
@@ -1934,6 +1966,8 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
             OsPrefs.setVhsWide(opts[(opts.indexOf(OsPrefs.vhsWide) + 1).mod(opts.size)])
         },
         // lettering styles of different VCR makers: tap for the next one, it loops
+        // the apps drawer's look
+        "DRAWER " + listOf("FLOAT LIST", "TAPE SHELF", "TELETEXT", "ICON GRID")[OsPrefs.vhsDrawer.coerceIn(0, 3)] to { OsPrefs.setVhsDrawer((OsPrefs.vhsDrawer + 1) % 4) },
         "FONT  " + VHS_FONTS[OsPrefs.vhsFont.coerceIn(0, VHS_FONTS.size - 1)] to { OsPrefs.setVhsFont((OsPrefs.vhsFont + 1) % VHS_FONTS.size) },
         ("TITLE1 " + OsPrefs.vhsTitle1.take(14) + if (editTitle == 1 && blink) "_" else "") to { editTitle = 1 },
         // the news ticker's feed: tap and type an RSS address (empty = no ticker)
@@ -1958,7 +1992,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         androidx.compose.runtime.key(editTitle) { RegisterKb(VhsKb(
             { if (editTitle == 1) OsPrefs.vhsTitle1 else OsPrefs.vhsRss },
             { t -> if (editTitle == 1) OsPrefs.setVhsTitles(t.take(20), OsPrefs.vhsTitle2) else OsPrefs.setVhsRss(t.trim().take(400)) },
-            raw = editTitle == 2,
+            raw = editTitle == 2, label = if (editTitle == 1) "TITLE1" else "RSS FEED ADDRESS",
         ) { editTitle = 0 }) }
         LaunchedEffect(editTitle) { delay(50); openKb() }
     }
@@ -2290,49 +2324,135 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
             },
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
-            VhsHeader("APPS", "${apps.size} INSTALLED")
-            Row(Modifier.fillMaxWidth().weight(1f)) {
-                androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f).fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(pxDp(2f))) {
-                    items(apps.size, key = { apps[it].component.toString() + it }, contentType = { 0 }) { i ->
-                        val a = apps[i]
-                        val first = i == 0 || keyOf(apps[i - 1].label) != keyOf(a.label)
-                        Column {
-                            if (first) VhsText(keyOf(a.label).toString(), invert = true)
-                            Box(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { Haptics.tick(); Launcher.launch(ctx, a, fullScreen = true); onClose() } }) {
-                                VhsText(vhsSafe(a.label).trim().take(15))
+            fun open(a: Launcher.PhoneApp) { Haptics.tick(); Launcher.launch(ctx, a, fullScreen = true); onClose() }
+            when (OsPrefs.vhsDrawer) {
+                // ---- B: TAPE SHELF: every app a labelled VHS tape spine, two to a shelf
+                1 -> {
+                    VhsHeader("TAPE SHELF", "${apps.size} TAPES")
+                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                        androidx.compose.foundation.lazy.grid.GridCells.Fixed(2), Modifier.fillMaxWidth().weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(2f)),
+                    ) {
+                        items(apps.size, key = { apps[it].component.toString() + it }) { i ->
+                            val a = apps[i]
+                            val stripe = SPINES[(a.label.hashCode() and 0x7fffffff) % SPINES.size]
+                            Box(Modifier.fillMaxWidth().height(pxDp(13f)).background(Color(0xFF141018)).drawBehind {
+                                val px = o.px
+                                drawRect(stripe, Offset.Zero, Size(px * 2.2f, size.height))                       // the coloured spine end
+                                drawRect(Color(0xFFF2EBD9), Offset(px * 3.4f, px * 2f), Size(size.width - px * 4.4f, size.height - px * 4f)) // paper label
+                                drawRect(Color.White.copy(alpha = 0.08f), Offset.Zero, Size(size.width, px * 0.7f))
+                            }.pointerInput(a.component) { detectTapGestures { open(a) } }, contentAlignment = Alignment.CenterStart) {
+                                Box(Modifier.padding(start = pxDp(3.6f))) { VhsText(vhsSafe(a.label).trim().take(8), color = Color(0xFF1C1626), scale = 0.9f) }
                             }
                         }
                     }
                 }
-                // the letter strip: drawn to fit exactly between the header and the bottom bar; touch or slide to jump
-                val stripInk = o.fg
-                val sel = bubble
-                androidx.compose.foundation.Canvas(
-                    Modifier.fillMaxHeight().width(pxDp(8f)).padding(start = pxDp(1f)).pointerInput(apps) {
-                        awaitEachGesture {
-                            val d0 = awaitFirstDown()
-                            fun at(y: Float) = letters[((y / size.height) * letters.length).toInt().coerceIn(0, letters.length - 1)]
-                            jump(at(d0.position.y)); d0.consume()
-                            while (true) {
-                                val ev = awaitPointerEvent()
-                                val c = ev.changes.firstOrNull { it.id == d0.id } ?: break
-                                if (!c.pressed) break
-                                jump(at(c.position.y)); c.consume()
+                // ---- C: TELETEXT GUIDE: page 100, numbered "channels", coloured jump keys at the bottom
+                2 -> {
+                    val now = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.US).format(java.util.Date()) }
+                    Box(Modifier.fillMaxWidth().background(Color(0xFF1A1AD0)).padding(pxDp(1f))) { VhsText(("P100 APPS GUIDE " + now).take(21), color = Color.White) }
+                    Row { VhsText("CH ", color = Color(0xFFFFF04A)); VhsText("PROGRAMME", color = Color(0xFFFFF04A)) }
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().weight(1f), state = list, verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
+                        items(apps.size, key = { apps[it].component.toString() + it }) { i ->
+                            val a = apps[i]
+                            Row(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { open(a) } }) {
+                                VhsText("%02d ".format((i + 1) % 100), color = Color(0xFF5CF6FF))
+                                VhsText(vhsSafe(a.label).trim().take(17), color = Color.White)
                             }
-                            bubble = null
                         }
-                    },
-                ) {
-                    val cell = size.height / letters.length
-                    val gpx = minOf(o.px, cell / 8.5f)
-                    val gx = (size.width - 5 * gpx) / 2
-                    letters.forEachIndexed { k, c ->
-                        val y = k * cell + (cell - 7 * gpx) / 2
-                        if (sel == c) {
-                            drawRect(stripInk, Offset(gx - gpx, y - gpx), Size(7 * gpx, 9 * gpx))
-                            drawGlyphs(c.toString(), gx, y, gpx, null, o.bg)
-                        } else drawGlyphs(c.toString(), gx, y, gpx, null, stripInk)
                     }
+                    // FASTEXT keys: red A–F, green G–L, yellow M–R, blue S–Z
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(1.5f))) {
+                        listOf(Triple("A-F", 'A', Color(0xFFE01010)), Triple("G-L", 'G', Color(0xFF10B010)), Triple("M-R", 'M', Color(0xFFE8E010)), Triple("S-Z", 'S', Color(0xFF1030E0))).forEach { (t, c, col) ->
+                            Box(Modifier.weight(1f).background(col).padding(pxDp(0.8f)).pointerInput(c) { detectTapGestures { jump(c); bubble = null } }, contentAlignment = Alignment.Center) {
+                                VhsText(t, color = if (c == 'M') Color.Black else Color.White)
+                            }
+                        }
+                    }
+                }
+                // ---- E: PIXEL ICON GRID: the real app icons, pixelated and tinted in the text colour
+                3 -> {
+                    VhsHeader("APPS", "${apps.size} INSTALLED")
+                    val tint = remember(o.fg) {
+                        // brightness of the icon -> shades of the text colour
+                        val r = o.fg.red; val g = o.fg.green; val b = o.fg.blue
+                        androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(floatArrayOf(
+                            0.30f * r, 0.59f * r, 0.11f * r, 0f, 0f,
+                            0.30f * g, 0.59f * g, 0.11f * g, 0f, 0f,
+                            0.30f * b, 0.59f * b, 0.11f * b, 0f, 0f,
+                            0f, 0f, 0f, 1f, 0f,
+                        )))
+                    }
+                    val small = remember { HashMap<String, androidx.compose.ui.graphics.ImageBitmap?>() }
+                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                        androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), Modifier.fillMaxWidth().weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(pxDp(3f)),
+                    ) {
+                        items(apps.size, key = { apps[it].component.toString() + it }) { i ->
+                            val a = apps[i]
+                            val k = a.component.flattenToString()
+                            val img = small.getOrPut(k) {
+                                a.icon?.let { ic -> runCatching { android.graphics.Bitmap.createScaledBitmap(ic.asAndroidBitmap(), 18, 18, true).asImageBitmap() }.getOrNull() }
+                            }
+                            Column(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { open(a) } }, horizontalAlignment = Alignment.CenterHorizontally) {
+                                Canvas(Modifier.size(pxDp(18f))) {
+                                    if (img != null) drawImage(img, androidx.compose.ui.unit.IntOffset.Zero, androidx.compose.ui.unit.IntSize(img.width, img.height),
+                                        dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()), colorFilter = tint, filterQuality = androidx.compose.ui.graphics.FilterQuality.None)
+                                    else drawRect(o.fg, style = Stroke(o.px))
+                                }
+                                Spacer(Modifier.height(pxDp(1f)))
+                                VhsText(vhsSafe(a.label).trim().take(6))
+                            }
+                        }
+                    }
+                }
+                // ---- A: the floating A–Z list with the letter strip
+                else -> {
+                    VhsHeader("APPS", "${apps.size} INSTALLED")
+                Row(Modifier.fillMaxWidth().weight(1f)) {
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f).fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(pxDp(2f))) {
+                        items(apps.size, key = { apps[it].component.toString() + it }, contentType = { 0 }) { i ->
+                            val a = apps[i]
+                            val first = i == 0 || keyOf(apps[i - 1].label) != keyOf(a.label)
+                            Column {
+                                if (first) VhsText(keyOf(a.label).toString(), invert = true)
+                                Box(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { Haptics.tick(); Launcher.launch(ctx, a, fullScreen = true); onClose() } }) {
+                                    VhsText(vhsSafe(a.label).trim().take(15))
+                                }
+                            }
+                        }
+                    }
+                    // the letter strip: drawn to fit exactly between the header and the bottom bar; touch or slide to jump
+                    val stripInk = o.fg
+                    val sel = bubble
+                    androidx.compose.foundation.Canvas(
+                        Modifier.fillMaxHeight().width(pxDp(8f)).padding(start = pxDp(1f)).pointerInput(apps) {
+                            awaitEachGesture {
+                                val d0 = awaitFirstDown()
+                                fun at(y: Float) = letters[((y / size.height) * letters.length).toInt().coerceIn(0, letters.length - 1)]
+                                jump(at(d0.position.y)); d0.consume()
+                                while (true) {
+                                    val ev = awaitPointerEvent()
+                                    val c = ev.changes.firstOrNull { it.id == d0.id } ?: break
+                                    if (!c.pressed) break
+                                    jump(at(c.position.y)); c.consume()
+                                }
+                                bubble = null
+                            }
+                        },
+                    ) {
+                        val cell = size.height / letters.length
+                        val gpx = minOf(o.px, cell / 8.5f)
+                        val gx = (size.width - 5 * gpx) / 2
+                        letters.forEachIndexed { k, c ->
+                            val y = k * cell + (cell - 7 * gpx) / 2
+                            if (sel == c) {
+                                drawRect(stripInk, Offset(gx - gpx, y - gpx), Size(7 * gpx, 9 * gpx))
+                                drawGlyphs(c.toString(), gx, y, gpx, null, o.bg)
+                            } else drawGlyphs(c.toString(), gx, y, gpx, null, stripInk)
+                        }
+                    }
+                }
                 }
             }
             Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onClose() } }) {

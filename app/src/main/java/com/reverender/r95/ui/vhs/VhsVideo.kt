@@ -453,7 +453,7 @@ internal fun VhsVideo(d: VideoDeck, onExit: () -> Unit, onSwitch: (String) -> Un
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(pxDp(3f)), verticalAlignment = Alignment.CenterVertically) {
                 com.reverender.r95.ui.apps.SUB_LANGS.forEach { (code, _) -> VhsKey(code.uppercase(), selected = subLang == code, boxed = true) { subLang = code } }
             }
-            RegisterKb(VhsKb({ subQuery }, { subQuery = it.take(30) }) { findSubs() })
+            RegisterKb(VhsKb({ subQuery }, { subQuery = it.take(30) }, label = "FIND SUBTITLES") { findSubs() })
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(3f)), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).pointerInput(Unit) { detectTapGestures(onLongPress = { subQuery = "" }) { openKb() } }) {
                     VhsText("FIND:" + subQuery.takeLast(10) + if (blink) "_" else " ")
@@ -497,7 +497,7 @@ internal fun VhsVideo(d: VideoDeck, onExit: () -> Unit, onSwitch: (String) -> Un
                 VhsKey("ARCHIVE", selected = source == "IA", boxed = true) { source = "IA" }
                 VhsKey("FILE", boxed = true) { pick.launch(arrayOf("video/*")) }
             }
-            RegisterKb(VhsKb({ query }, { query = it.take(24) }) { search() })
+            RegisterKb(VhsKb({ query }, { query = it.take(24) }, label = "FIND A VIDEO") { search() })
             // the phone keyboard types the search: swipe up or tap the FIND line (hold it to clear)
             Box(Modifier.fillMaxWidth().pointerInput(Unit) { detectTapGestures(onLongPress = { query = "" }) { openKb() } }) {
                 VhsText("FIND:" + query.takeLast(16) + if (blink) "_" else " ")
