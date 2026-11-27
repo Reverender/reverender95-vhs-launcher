@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-/** The news ticker in the home screen's title block: headlines from an RSS (or Atom) feed, every 15 minutes. */
+/** The news ticker in the home screen's title block: headlines from an RSS (or Atom) feed, every 10 minutes. */
 internal object VhsRss {
     const val DEFAULT = "https://feeds.bbci.co.uk/news/world/rss.xml"
     var headlines by mutableStateOf<List<String>>(emptyList())
@@ -20,10 +20,11 @@ internal object VhsRss {
         if (url != loadedUrl) { headlines = emptyList(); status = "TUNING IN THE NEWS…" }
         delay(1200) // (typing a new address: wait until it stops changing)
         while (true) {
+            com.reverender.r95.core.AppVisibility.awaitForeground() // (no fetching while the launcher isn't shown)
             val r = runCatching { fetch(url) }
             r.onSuccess { if (it.isNotEmpty()) { headlines = it; loadedUrl = url } else status = "NO NEWS IN THIS FEED" }
             r.onFailure { if (headlines.isEmpty()) status = "NEWS FEED UNAVAILABLE"; android.util.Log.w("r95", "rss: $url", it) }
-            delay(if (r.isSuccess) 15 * 60_000L else 60_000L)
+            delay(if (r.isSuccess) 10 * 60_000L else 60_000L) // fresh news every 10 minutes
         }
     }
 

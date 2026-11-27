@@ -140,7 +140,7 @@ private val STANDARDS = listOf(
  * so long names (radio stations, files, songs) can always be read. Moved on the GPU layer only (no redraw).
  */
 @Composable
-internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null) {
+internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true) {
     val o = LocalOsd.current
     val d = LocalDensity.current
     val wDp = with(d) { ((cols * 6 + 1) * o.px).toDp() }
@@ -148,7 +148,9 @@ internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modif
     val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val textW = (text.length * 6 + 1) * o.px
     val fieldW = (cols * 6 + 1) * o.px
-    LaunchedEffect(text, o.px) {
+    LaunchedEffect(text, o.px, running) {
+        // stopped: the name stands still from its first letter
+        if (!running) { shift.floatValue = 0f; return@LaunchedEffect }
         val speed = o.px * 6 / 0.16f // a character every 0.16 s
         val t0 = androidx.compose.runtime.withFrameNanos { it }
         while (true) {
@@ -1367,6 +1369,10 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         }
         val title = when (p.mode) {
             com.reverender.r95.audio.SourceMode.DECK -> "TRK %02d:%s".format(p.deckIndex + 1, Catalog.deck.getOrNull(p.deckIndex)?.title.orEmpty())
+            // radio: the station, then the song it says is playing (updated whenever the station changes song)
+            com.reverender.r95.audio.SourceMode.RADIO -> com.reverender.r95.audio.IcyNow.title.let { icy ->
+                if (icy.isNotBlank() && !p.nowPlaying.contains(icy)) p.nowPlaying.substringBefore(" — ") + " — " + icy else p.nowPlaying
+            }.ifBlank { "NO TAPE" }
             else -> p.nowPlaying.ifBlank { "NO TAPE" }
         }
         val pd = pending
@@ -1376,8 +1382,9 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         }
         else if (pd != null) VhsText(("READY:" + pd.label).take(21), invert = blink)
         // what's playing runs past as a ticker, so long names are readable
-        else if (ext) VhsMarquee("♪ " + vhsSafe(listOf(com.reverender.r95.os.ExternalMedia.artist, com.reverender.r95.os.ExternalMedia.title).filter { it.isNotBlank() }.joinToString(" - ").ifBlank { "OTHER MUSIC APP" }).trim())
-        else VhsMarquee(vhsSafe(title).trim())
+        else if (ext) VhsMarquee(running = ExtMedia.playing, text = "♪ " + vhsSafe(listOf(com.reverender.r95.os.ExternalMedia.artist, com.reverender.r95.os.ExternalMedia.title).filter { it.isNotBlank() }.joinToString(" - ").ifBlank { "OTHER MUSIC APP" }).trim())
+        // (runs only while playing; a radio station's song changes it as soon as the station says so)
+        else VhsMarquee(vhsSafe(title).trim(), running = playing)
 
         // ---- VOLUME
         VhsText("VOLUME")

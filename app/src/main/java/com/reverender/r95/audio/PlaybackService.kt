@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.OptIn
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
@@ -84,7 +86,17 @@ class PlaybackService : MediaSessionService() {
                 com.reverender.r95.os.WidgetHub.onPlayerChanged(ctx)
             }
             override fun onMediaMetadataChanged(mediaMetadata: androidx.media3.common.MediaMetadata) = com.reverender.r95.os.WidgetHub.onPlayerChanged(ctx)
-            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) = com.reverender.r95.os.WidgetHub.onPlayerChanged(ctx)
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                IcyNow.title = ""
+                com.reverender.r95.os.WidgetHub.onPlayerChanged(ctx)
+            }
+            // a radio stream's "now playing" (ICY StreamTitle), as soon as the station sends a new one
+            override fun onMetadata(metadata: androidx.media3.common.Metadata) {
+                for (i in 0 until metadata.length()) {
+                    val t = (metadata[i] as? androidx.media3.extractor.metadata.icy.IcyInfo)?.title?.trim()
+                    if (!t.isNullOrBlank() && t != "-") IcyNow.title = t
+                }
+            }
         })
     }
 
@@ -111,3 +123,7 @@ class PlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 }
+
+
+/** the song a radio stream says is on now (empty: none told) */
+object IcyNow { var title by androidx.compose.runtime.mutableStateOf("") }
