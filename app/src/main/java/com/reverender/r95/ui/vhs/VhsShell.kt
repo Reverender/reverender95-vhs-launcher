@@ -140,17 +140,21 @@ private val STANDARDS = listOf(
  * so long names (radio stations, files, songs) can always be read. Moved on the GPU layer only (no redraw).
  */
 @Composable
-internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true, secPerChar: Float = 0.16f) {
+internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true, secPerChar: Float = 0.16f, fill: Boolean = false) {
     val o = LocalOsd.current
     val d = LocalDensity.current
     val wDp = with(d) { ((cols * 6 + 1) * o.px).toDp() }
     val hDp = with(d) { (9 * o.px).toDp() }
     val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val textW = (text.length * 6 + 1) * o.px
-    val fieldW = (cols * 6 + 1) * o.px
-    LaunchedEffect(text, o.px, running, secPerChar) {
-        // stopped: the name stands still from its first letter
+    // [fill]: as wide as the space it's in (the title block's line), else [cols] characters
+    val fieldPx = remember { androidx.compose.runtime.mutableFloatStateOf((cols * 6 + 1) * o.px) }
+    val fieldW = if (fill) fieldPx.floatValue else (cols * 6 + 1) * o.px
+    val pageHidden = LocalPageHidden.current
+    LaunchedEffect(text, o.px, running, secPerChar, fieldW, pageHidden) {
+        // stopped: the name stands still from its first letter (and nothing runs on a hidden page)
         if (!running) { shift.floatValue = 0f; return@LaunchedEffect }
+        if (pageHidden) return@LaunchedEffect
         val speed = o.px * 6 / secPerChar // a character every secPerChar seconds
         val t0 = androidx.compose.runtime.withFrameNanos { it }
         while (true) {
@@ -160,7 +164,8 @@ internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modif
             }
         }
     }
-    Box(modifier.size(wDp, hDp).clipToBounds()) {
+    Box(modifier.then(if (fill) Modifier.fillMaxWidth().height(hDp) else Modifier.size(wDp, hDp)).clipToBounds()
+        .onSizeChanged { if (fill) fieldPx.floatValue = it.width.toFloat() }) {
         VhsText(text, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).graphicsLayer { translationX = shift.floatValue }, color = color)
     }
 }
@@ -353,6 +358,9 @@ internal fun VhsLetterPad(onChar: (Char) -> Unit) {
     }
 }
 
+/** true for a page kept composed but hidden behind another menu */
+internal val LocalPageHidden = androidx.compose.runtime.compositionLocalOf { false }
+
 /** A search field the phone keyboard can type into (swipe up); [enter] runs on the keyboard's enter key. */
 internal class VhsKb(val get: () -> String, val set: (String) -> Unit, val raw: Boolean = false, val enter: () -> Unit)
 internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime.mutableStateOf<VhsKb?>(null) }
@@ -360,6 +368,7 @@ internal val LocalKbHolder = staticCompositionLocalOf { androidx.compose.runtime
 /** While composed, swipe up types into this field. */
 @Composable
 internal fun RegisterKb(kb: VhsKb) {
+    if (LocalPageHidden.current) return // a page kept alive behind another menu doesn't take the keyboard
     val holder = LocalKbHolder.current
     val cur by androidx.compose.runtime.rememberUpdatedState(kb)
     val proxy = remember { VhsKb({ cur.get() }, { cur.set(it) }, kb.raw) { cur.enter() } }
@@ -991,7 +1000,18 @@ fun VhsShell(onShutDown: () -> Unit) {
                         if (screen == Screen.MAIN && OsPrefs.vhsWide == "APPS") CompositionLocalProvider(LocalOsd provides Osd(fg, bg, pxW)) { VhsAppsPane() }
                         else Page(if (screen == Screen.MAIN) sideDefault else screen, "R")
                     }
-                } else Page(screen, "")
+                } else {
+                    // the home menu stays alive under the other menus (hidden, parked off screen, its animations
+                    // resting), so coming back is instant: no rebuilding, no re-fitting, no news reload
+                    val hidden = screen != Screen.MAIN
+                    androidx.compose.runtime.SideEffect { VhsUi.mainHidden = hidden }
+                    Box(Modifier.fillMaxSize()
+                        .layout { m, c -> val pl = m.measure(c); layout(pl.width, pl.height) { pl.place(if (hidden) pl.width * 4 else 0, 0) } }
+                        .graphicsLayer { alpha = if (hidden) 0f else 1f }) {
+                        CompositionLocalProvider(LocalPageHidden provides hidden) { Page(Screen.MAIN, "") }
+                    }
+                    if (hidden) Page(screen, "")
+                }
             }
             if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onClose = { settleDrawer(false) })
         }
@@ -1181,7 +1201,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         // the title block: TITLE1 on top, the news ticker (SETUP > RSS) running through the second line
         val t1 = OsPrefs.vhsTitle1.trim(); val rss = OsPrefs.vhsRss.trim()
         LaunchedEffect(rss) { VhsRss.run(rss) }
-        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), cols = 21, secPerChar = 0.34f - 0.29f * OsPrefs.vhsRssSpeed) }
+        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), fill = true, secPerChar = 0.34f - 0.29f * OsPrefs.vhsRssSpeed) }
         // (VHS+ APK: the notification area sits at the right end of the top bar)
         if (t1.isNotEmpty() || rss.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
             if (t1.isNotEmpty() && rss.isNotEmpty()) VhsHeader(t1, "", news)
@@ -1477,7 +1497,7 @@ private fun VhsSpectrum(modifier: Modifier, musicOn: () -> Boolean) {
             lastTickMs[0] = System.currentTimeMillis()
             com.reverender.r95.core.AppVisibility.awaitForeground()
             lastTickMs[0] = System.currentTimeMillis()
-            if (VhsUi.drawerOpen) { delay(120); last = System.nanoTime(); continue } // hidden behind the apps drawer
+            if (VhsUi.drawerOpen || VhsUi.mainHidden) { delay(120); last = System.nanoTime(); continue } // hidden: the apps drawer or another menu is over it
             val nowNs = System.nanoTime()
             val dt = ((nowNs - last) / 1e9f).coerceIn(0.005f, 0.1f); last = nowNs
             val f = AudioBus.currentFrame()
@@ -2602,6 +2622,8 @@ internal object VhsSound {
 internal object VhsUi {
     /** the apps drawer covers the screen: things behind it can rest */
     @Volatile var drawerOpen = false
+    /** another menu is open over the (kept) home menu */
+    @Volatile var mainHidden = false
 }
 
 /** The help bars at the bottom: shown for 2 s after a touch or a new screen, then they slide away. */
