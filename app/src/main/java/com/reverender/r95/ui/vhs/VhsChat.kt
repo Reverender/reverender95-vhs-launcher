@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -223,7 +224,13 @@ internal fun VhsChat(onExit: () -> Unit) {
     // back: chat -> chat list -> home, one step per press
     BackHandler { if (VhsChats.open != null) VhsChats.open = null else onExit() }
     // the phone keyboard pushes the chat up, so the reply line stays in view
-    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
+    // a sideways swipe on an empty part of the screen: back home (a chat in the list takes its own swipe: dismiss)
+    var swipe by remember { mutableStateOf(0f) }
+    Column(Modifier.fillMaxSize().imePadding()
+        .pointerInput(Unit) {
+            detectHorizontalDragGestures(onDragStart = { swipe = 0f }, onDragEnd = { if (kotlin.math.abs(swipe) > size.width * 0.28f) { Haptics.tick(); VhsChats.open = null; onExit() } }) { _, d -> swipe += d }
+        }
+        .padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
         val c = VhsChats.chat(key)
         if (c == null) ChatList(onExit) else ChatView(c)
     }
@@ -311,19 +318,24 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
     LaunchedEffect(c.msgs.size, scroll.maxValue) { scroll.scrollTo(scroll.maxValue) }
     Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(pxDp(1.2f))) {
         var lastFrom: String? = "\u0000"
+        var lastMin = -1L
         for (m in c.msgs) {
             val mine = m.from == null
+            // every message on its own: a gap between them, and the name + time again when the sender changes or
+            // a new minute starts
+            val min = m.time / 60_000L
+            if (lastFrom != "\u0000") Spacer(Modifier.height(pxDp(if (m.from != lastFrom) 3.5f else 2f)))
             Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-                if (m.from != lastFrom) {
+                if (m.from != lastFrom || min != lastMin) {
                     val who = if (mine) "ME" else if (c.group) vhsSafe(m.from!!).trim().take(14) else vhsSafe(c.name).trim().substringBefore(' ').take(14)
                     VhsText("$who " + hhmm(m.time), color = o.fg.copy(alpha = 0.55f))
                 }
-                val lines = wrap(vhsSafe(m.text).replace(Regex(" +"), " ").trim().ifEmpty { "(EMOJI / MEDIA)" }, 19)
+                val lines = wrapRich(richTokens(m.text.trim().ifEmpty { "(MEDIA)" }), 19)
                 Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-                    for (l in lines) VhsText(if (mine) "$l " else " $l", invert = mine)
+                    for (l in lines) RichLine(l, invert = mine, padStart = !mine, padEnd = mine)
                 }
             }
-            lastFrom = m.from
+            lastFrom = m.from; lastMin = min
         }
     }
     msg?.let { VhsText(it, invert = true) }
@@ -331,8 +343,8 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(1.5f)), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f).pointerInput(Unit) { detectTapGestures(onLongPress = { draft = "" }) { openKb() } }) {
             // what you type, wrapped (the last 3 lines), with the cursor
-            val lines = wrap(vhsSafe(draft).replace(Regex(" +"), " ") + if (blink) "_" else " ", 15).takeLast(3)
-            Column { lines.forEachIndexed { i, l -> VhsText((if (i == 0) ">" else " ") + l) } }
+            val lines = wrapRich(richTokens(draft + if (blink) "_" else " "), 15).takeLast(3)
+            Column { lines.forEachIndexed { i, l -> Row { VhsText(if (i == 0) ">" else " "); RichLine(l) } } }
         }
         VhsKey("SEND", boxed = true) { send() }
     }
@@ -341,5 +353,69 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
             VhsText("TAP > TO TYPE A REPLY", invert = true)
             VhsText("TAP HERE FOR CHATS", invert = true)
         }
+    }
+}
+
+
+/** a piece of chat text: a letter in the OSD font, or an emoji / symbol the phone has to draw (two cells wide) */
+internal class RichTok(val emoji: Boolean, val s: String)
+
+/** text cut into OSD letters and emoji (whole emoji, skin tones and flags included) */
+internal fun richTokens(text: String): List<RichTok> {
+    val out = ArrayList<RichTok>()
+    val bi = java.text.BreakIterator.getCharacterInstance()
+    bi.setText(text)
+    var a = bi.first(); var b = bi.next()
+    while (b != java.text.BreakIterator.DONE) {
+        val g = text.substring(a, b)
+        val safe = vhsSafe(g)
+        when {
+            g == "\n" || g.isBlank() -> out.add(RichTok(false, " "))
+            safe.isNotBlank() && safe.length == 1 -> out.add(RichTok(false, safe))
+            else -> out.add(RichTok(true, g)) // emoji, or a letter the pixel font doesn't have: the phone draws it
+        }
+        a = b; b = bi.next()
+    }
+    return out
+}
+
+/** [toks] in lines of at most [w] cells (an emoji takes two), broken between words */
+internal fun wrapRich(toks: List<RichTok>, w: Int): List<List<RichTok>> {
+    val lines = ArrayList<List<RichTok>>()
+    var line = ArrayList<RichTok>(); var lw = 0
+    val word = ArrayList<RichTok>(); var ww = 0
+    fun flushWord() {
+        if (word.isEmpty()) return
+        if (lw > 0 && lw + 1 + ww > w) { lines.add(line); line = ArrayList(); lw = 0 }
+        if (lw > 0) { line.add(RichTok(false, " ")); lw++ }
+        for (t in word) { val tw = if (t.emoji) 2 else 1; if (lw + tw > w) { lines.add(line); line = ArrayList(); lw = 0 }; line.add(t); lw += tw }
+        word.clear(); ww = 0
+    }
+    for (t in toks) { if (!t.emoji && t.s == " ") flushWord() else { word.add(t); ww += if (t.emoji) 2 else 1 } }
+    flushWord()
+    if (line.isNotEmpty() || lines.isEmpty()) lines.add(line)
+    return lines
+}
+
+/** one line of chat text: OSD letters, emoji drawn by the phone in between, at the same size */
+@Composable
+internal fun RichLine(toks: List<RichTok>, invert: Boolean = false, padStart: Boolean = false, padEnd: Boolean = false) {
+    val o = LocalOsd.current
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    val emojiSize = with(d) { (o.px * 8.2f).toSp() }
+    val cell = with(d) { (o.px * 12f).toDp() }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val run = StringBuilder()
+        @Composable fun flush() { if (run.isNotEmpty()) { VhsText(run.toString(), invert = invert); run.clear() } }
+        if (padStart) run.append(' ')
+        for (t in toks) {
+            if (!t.emoji) { run.append(t.s); continue }
+            flush()
+            Box(Modifier.width(cell).then(if (invert) Modifier.background(o.fg) else Modifier), contentAlignment = Alignment.Center) {
+                androidx.compose.foundation.text.BasicText(t.s, style = androidx.compose.ui.text.TextStyle(fontSize = emojiSize))
+            }
+        }
+        if (padEnd) run.append(' ')
+        flush()
     }
 }

@@ -50,6 +50,9 @@ object Launcher {
     fun isHomeIntent(i: Intent?): Boolean = i?.categories?.contains(Intent.CATEGORY_HOME) == true
 
     /** The phone's launchable apps, A–Z (loaded off the UI thread, refreshed at most every 30 s). */
+    /** an app was installed / removed: load the list again on the next [load] */
+    fun stale() { loadedAt = 0L }
+
     fun load(ctx: Context) {
         if (loading || System.currentTimeMillis() - loadedAt < 30_000 && apps.isNotEmpty()) return
         loading = true

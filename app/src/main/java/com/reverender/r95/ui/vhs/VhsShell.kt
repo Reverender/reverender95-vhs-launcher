@@ -809,7 +809,7 @@ private fun VhsCrt(clock: androidx.compose.runtime.LongState, g: Float, sched: G
 
 // ---------------------------------------------------------------- shell
 
-private enum class Screen { MAIN, SETUP, CHOOSE, VIDEO, PLAYLIST, EQ, CHAT }
+private enum class Screen { MAIN, SETUP, CHOOSE, VIDEO, PLAYLIST, EQ, CHAT, WEB }
 
 @Composable
 fun VhsShell(onShutDown: () -> Unit) {
@@ -836,6 +836,17 @@ fun VhsShell(onShutDown: () -> Unit) {
     var chooseDir by remember { mutableStateOf("up") }
     val bg = Color(OsPrefs.vhsBg.toInt()); val fg = Color(OsPrefs.vhsFg.toInt())
     LaunchedEffect(Unit) { Launcher.load(ctx) }
+    // apps installed or uninstalled (e.g. from the drawer's hold menu): the list follows
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val rx = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context, i: android.content.Intent) { Launcher.stale(); Launcher.load(ctx) }
+        }
+        val f = android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_PACKAGE_ADDED); addAction(android.content.Intent.ACTION_PACKAGE_REMOVED); addAction(android.content.Intent.ACTION_PACKAGE_CHANGED); addDataScheme("package")
+        }
+        androidx.core.content.ContextCompat.registerReceiver(ctx, rx, f, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+        onDispose { runCatching { ctx.unregisterReceiver(rx) } }
+    }
     LaunchedEffect(Unit) { VhsSound.load(ctx) } // the EQ page's sound settings
     remember { runCatching { com.reverender.r95.ui.viz.site.SiteHost.ensureInit() } } // the page data VAPOR_AMP and the tape deck use
     // VAPOR_AMP's clock (the desktop's player window normally runs it)
@@ -1033,6 +1044,10 @@ fun VhsShell(onShutDown: () -> Unit) {
                             when {
                                 target == "vhs:setup" -> screen = Screen.SETUP
                                 target == "vhs:chat" && com.reverender.r95.BuildConfig.NOTIF -> { Haptics.tick(); screen = Screen.CHAT }
+                                target == "vhs:eq" -> { Haptics.tick(); screen = Screen.EQ }
+                                target == "vhs:playlist" -> { Haptics.tick(); screen = Screen.PLAYLIST }
+                                target == "vhs:load" -> { Haptics.tick(); deck.searching = true; deck.subsOpen = false; screen = Screen.VIDEO }
+                                target == "vhs:web" -> { Haptics.tick(); screen = Screen.WEB }
                                 target.startsWith("pkg:") -> { Haptics.tick(); Launcher.openTarget(ctx, target, fullScreen = true) { } }
                             }
                         }
@@ -1055,6 +1070,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                             Screen.SETUP -> VhsSetup(f, availH, onEnd = { screen = Screen.MAIN }, onChoose = { chooseDir = it; screen = Screen.CHOOSE })
                             Screen.CHOOSE -> VhsChoose(chooseDir) { screen = Screen.SETUP }
                             Screen.CHAT -> VhsChat(onExit = { screen = Screen.MAIN })
+                            Screen.WEB -> VhsWeb(onExit = { screen = Screen.MAIN })
                         }
                     }
                 }
@@ -1902,6 +1918,10 @@ private fun targetName(t: String): String = when {
     t.isEmpty() -> "---"
     t == "vhs:setup" -> "SETUP"
     t == "vhs:chat" -> "WHATSAPP"
+    t == "vhs:eq" -> "EQ"
+    t == "vhs:playlist" -> "PLAYLIST"
+    t == "vhs:load" -> "LOAD"
+    t == "vhs:web" -> "VHS WEB"
     t.startsWith("pkg:") -> Launcher.find(t.removePrefix("pkg:"))?.label?.uppercase()?.take(12) ?: "APP"
     else -> t.uppercase()
 }
@@ -1973,6 +1993,9 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         // the news ticker's feed: tap and type an RSS address (empty = no ticker)
         ("RSS    " + (if (editTitle == 2) vhsSafe(OsPrefs.vhsRss).takeLast(13) + (if (blink) "_" else "")
             else OsPrefs.vhsRss.trim().ifEmpty { "OFF" }.let { u -> if (u == "OFF") u else vhsSafe(runCatching { java.net.URI(if (u.startsWith("http")) u else "https://$u").host }.getOrNull() ?: u).removePrefix("WWW.").removePrefix("FEEDS.").take(14) })) to { editTitle = 2 },
+        // VHS WEB's homepage: tap and type its address
+        ("WEBHOME " + (if (editTitle == 3) vhsSafe(OsPrefs.vhsWebHome).takeLast(12) + (if (blink) "_" else "")
+            else vhsSafe(runCatching { java.net.URI(OsPrefs.vhsWebHome).host }.getOrNull() ?: OsPrefs.vhsWebHome).removePrefix("WWW.").take(13))) to { editTitle = 3 },
         "SWIPE◀ " + targetName(OsPrefs.vhsSwipe["left"].orEmpty()) to { onChoose("left") },
         "SWIPE▶ " + targetName(OsPrefs.vhsSwipe["right"].orEmpty()) to { onChoose("right") },
         "PIN APPS" to { onChoose("pin") },
@@ -1990,9 +2013,9 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
     if (editTitle != 0) {
         // (an RSS address keeps its exact letters; a title goes through the OSD font)
         androidx.compose.runtime.key(editTitle) { RegisterKb(VhsKb(
-            { if (editTitle == 1) OsPrefs.vhsTitle1 else OsPrefs.vhsRss },
-            { t -> if (editTitle == 1) OsPrefs.setVhsTitles(t.take(20), OsPrefs.vhsTitle2) else OsPrefs.setVhsRss(t.trim().take(400)) },
-            raw = editTitle == 2, label = if (editTitle == 1) "TITLE1" else "RSS FEED ADDRESS",
+            { when (editTitle) { 1 -> OsPrefs.vhsTitle1; 3 -> OsPrefs.vhsWebHome; else -> OsPrefs.vhsRss } },
+            { t -> when (editTitle) { 1 -> OsPrefs.setVhsTitles(t.take(20), OsPrefs.vhsTitle2); 3 -> OsPrefs.setVhsWebHome(t.trim().take(400)); else -> OsPrefs.setVhsRss(t.trim().take(400)) } },
+            raw = editTitle != 1, label = when (editTitle) { 1 -> "TITLE1"; 3 -> "WEB HOMEPAGE"; else -> "RSS FEED ADDRESS" },
         ) { editTitle = 0 }) }
         LaunchedEffect(editTitle) { delay(50); openKb() }
     }
@@ -2123,7 +2146,7 @@ private fun VhsChoose(dir: String, onDone: () -> Unit) {
     ) {
         VhsHeader(if (pin) "PIN APPS" else "SWIPE " + mapOf("up" to "▲", "down" to "▼", "left" to "◀", "right" to "▶")[dir], if (pin) "TAP TO PIN / UNPIN" else "CHOOSE A PROGRAM")
         if (!pin) {
-            (listOf("" to "---  NOTHING", "vhs:setup" to "SETUP MENU") + (if (com.reverender.r95.BuildConfig.NOTIF) listOf("vhs:chat" to "WHATSAPP (VHS CHAT)") else emptyList())).forEach { (k, label) ->
+            (listOf("" to "---  NOTHING", "vhs:setup" to "SETUP MENU", "vhs:load" to "LOAD (VIDEO/GAME/MUSIC)", "vhs:eq" to "EQ", "vhs:playlist" to "PLAYLIST", "vhs:web" to "VHS WEB BROWSER") + (if (com.reverender.r95.BuildConfig.NOTIF) listOf("vhs:chat" to "WHATSAPP (VHS CHAT)") else emptyList())).forEach { (k, label) ->
                 Box(Modifier.pointerInput(k) { detectTapGestures { OsPrefs.setVhsSwipe(dir, k); onDone() } }) {
                     VhsText(label, invert = OsPrefs.vhsSwipe[dir].orEmpty() == k)
                 }
@@ -2274,6 +2297,10 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val letters = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     var bubble by remember { mutableStateOf<Char?>(null) }
+    // hold an app: APP INFO / UNINSTALL
+    var menuFor by remember { mutableStateOf<Launcher.PhoneApp?>(null) }
+    fun hold(a: Launcher.PhoneApp) { Haptics.clunk("eject"); menuFor = a }
+    LaunchedEffect(shown) { if (!shown) menuFor = null }
     fun keyOf(label: String): Char = label.trim().firstOrNull()?.uppercaseChar()?.takeIf { it in 'A'..'Z' } ?: '#'
     fun jump(c: Char) {
         val i = apps.indexOfFirst { keyOf(it.label) >= c }.let { if (it < 0) apps.lastIndex else it }
@@ -2341,7 +2368,7 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                                 drawRect(stripe, Offset.Zero, Size(px * 2.2f, size.height))                       // the coloured spine end
                                 drawRect(Color(0xFFF2EBD9), Offset(px * 3.4f, px * 2f), Size(size.width - px * 4.4f, size.height - px * 4f)) // paper label
                                 drawRect(Color.White.copy(alpha = 0.08f), Offset.Zero, Size(size.width, px * 0.7f))
-                            }.pointerInput(a.component) { detectTapGestures { open(a) } }, contentAlignment = Alignment.CenterStart) {
+                            }.pointerInput(a.component) { detectTapGestures(onLongPress = { hold(a) }) { open(a) } }, contentAlignment = Alignment.CenterStart) {
                                 Box(Modifier.padding(start = pxDp(3.6f))) { VhsText(vhsSafe(a.label).trim().take(8), color = Color(0xFF1C1626), scale = 0.9f) }
                             }
                         }
@@ -2355,7 +2382,7 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                     androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().weight(1f), state = list, verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
                         items(apps.size, key = { apps[it].component.toString() + it }) { i ->
                             val a = apps[i]
-                            Row(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { open(a) } }) {
+                            Row(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures(onLongPress = { hold(a) }) { open(a) } }) {
                                 VhsText("%02d ".format((i + 1) % 100), color = Color(0xFF5CF6FF))
                                 VhsText(vhsSafe(a.label).trim().take(14), color = Color.White)
                             }
@@ -2394,7 +2421,7 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                             val img = small.getOrPut(k) {
                                 a.icon?.let { ic -> runCatching { android.graphics.Bitmap.createScaledBitmap(ic.asAndroidBitmap(), 18, 18, true).asImageBitmap() }.getOrNull() }
                             }
-                            Column(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { open(a) } }, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures(onLongPress = { hold(a) }) { open(a) } }, horizontalAlignment = Alignment.CenterHorizontally) {
                                 Canvas(Modifier.size(pxDp(18f))) {
                                     if (img != null) drawImage(img, androidx.compose.ui.unit.IntOffset.Zero, androidx.compose.ui.unit.IntSize(img.width, img.height),
                                         dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()), colorFilter = tint, filterQuality = androidx.compose.ui.graphics.FilterQuality.None)
@@ -2416,7 +2443,7 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
                             val first = i == 0 || keyOf(apps[i - 1].label) != keyOf(a.label)
                             Column {
                                 if (first) VhsText(keyOf(a.label).toString(), invert = true)
-                                Box(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures { Haptics.tick(); Launcher.launch(ctx, a, fullScreen = true); onClose() } }) {
+                                Box(Modifier.fillMaxWidth().pointerInput(a.component) { detectTapGestures(onLongPress = { hold(a) }) { Haptics.tick(); Launcher.launch(ctx, a, fullScreen = true); onClose() } }) {
                                     VhsText(vhsSafe(a.label).trim().take(15))
                                 }
                             }
@@ -2461,6 +2488,29 @@ private fun VhsAppsDrawer(progress: () -> Float, widthPx: Float, shown: Boolean,
         }
         // the big letter while jumping
         bubble?.let { c -> Box(Modifier.align(Alignment.Center).background(o.fg).padding(pxDp(3f))) { VhsText(c.toString(), scale = 4f, invert = true) } }
+        // the hold menu for one app
+        menuFor?.let { a ->
+            Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.6f)).pointerInput(a) { detectTapGestures { menuFor = null } }, contentAlignment = Alignment.Center) {
+                Column(
+                    Modifier.fillMaxWidth(0.84f).background(o.bg).drawBehind { drawRect(o.fg, style = Stroke(o.px * 0.6f)) }.padding(pxDp(3f)).pointerInput(Unit) { detectTapGestures { } },
+                    verticalArrangement = Arrangement.spacedBy(pxDp(3f)),
+                ) {
+                    VhsText(vhsSafe(a.label).trim().take(14), invert = true)
+                    val pkg = a.component.packageName
+                    VhsKey("APP INFO", boxed = true) {
+                        runCatching { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$pkg")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        menuFor = null; onClose()
+                    }
+                    VhsKey("UNINSTALL", boxed = true) {
+                        // the phone's own "uninstall this app?" question; failing that, its App info page
+                        val ok = runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:$pkg")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+                        if (!ok) runCatching { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$pkg")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        menuFor = null
+                    }
+                    VhsKey("CANCEL", boxed = true) { menuFor = null }
+                }
+            }
+        }
     }
     }
 }
