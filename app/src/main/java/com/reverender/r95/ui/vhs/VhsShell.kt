@@ -991,12 +991,16 @@ fun VhsShell(onShutDown: () -> Unit) {
                     .uiMotionBlur(if (deck.fullscreen && screen == Screen.VIDEO) 0f else OsPrefs.vhsUiBlur)
                     .graphicsLayer {
                         // tape tearing: the picture slips sideways during a tracking burst
-                        val gl = if (crt) sched.at(clock.longValue, px, track) else NO_GLITCH
+                        // (VHS WEB: the web page is a real Android view, which can't follow a moving layer: the
+                        // picture stays put there and only the noise / fade play over it)
+                        val still = screen == Screen.WEB
+                        val gl = if (crt && !still) sched.at(clock.longValue, px, track) else NO_GLITCH
                         translationX = gl.tearX; translationY = gl.jitterY
                         // menu switch: the new picture rolls down into place (vertical hold), slips sideways a
                         // little, and comes up out of the dark, like a VCR finding the signal
                         val sp = switchP.floatValue
-                        if (sp < 1f) {
+                        if (sp < 1f && still) alpha = (sp * 2.2f - 0.15f).coerceIn(0f, 1f)
+                        else if (sp < 1f) {
                             val e = 1f - sp
                             translationY += -size.height * 0.10f * e * e * e + kotlin.math.sin(sp * 30f) * px * 1.5f * e
                             translationX += (java.util.Random((sp * 60).toLong()).nextFloat() - 0.5f) * px * 5f * e * e
