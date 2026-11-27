@@ -140,7 +140,7 @@ private val STANDARDS = listOf(
  * so long names (radio stations, files, songs) can always be read. Moved on the GPU layer only (no redraw).
  */
 @Composable
-internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true) {
+internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modifier, color: Color? = null, running: Boolean = true, secPerChar: Float = 0.16f) {
     val o = LocalOsd.current
     val d = LocalDensity.current
     val wDp = with(d) { ((cols * 6 + 1) * o.px).toDp() }
@@ -148,10 +148,10 @@ internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modif
     val shift = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val textW = (text.length * 6 + 1) * o.px
     val fieldW = (cols * 6 + 1) * o.px
-    LaunchedEffect(text, o.px, running) {
+    LaunchedEffect(text, o.px, running, secPerChar) {
         // stopped: the name stands still from its first letter
         if (!running) { shift.floatValue = 0f; return@LaunchedEffect }
-        val speed = o.px * 6 / 0.16f // a character every 0.16 s
+        val speed = o.px * 6 / secPerChar // a character every secPerChar seconds
         val t0 = androidx.compose.runtime.withFrameNanos { it }
         while (true) {
             androidx.compose.runtime.withFrameNanos { t ->
@@ -1181,7 +1181,7 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         // the title block: TITLE1 on top, the news ticker (SETUP > RSS) running through the second line
         val t1 = OsPrefs.vhsTitle1.trim(); val rss = OsPrefs.vhsRss.trim()
         LaunchedEffect(rss) { VhsRss.run(rss) }
-        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), cols = 21) }
+        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), cols = 21, secPerChar = 0.34f - 0.29f * OsPrefs.vhsRssSpeed) }
         // (VHS+ APK: the notification area sits at the right end of the top bar)
         if (t1.isNotEmpty() || rss.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
             if (t1.isNotEmpty() && rss.isNotEmpty()) VhsHeader(t1, "", news)
@@ -1927,6 +1927,15 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
                     VhsText(" ")
                     VhsKey("RESET TO SOLID COLOUR", boxed = true) { VhsBgPicture.clear(ctx); OsPrefs.setVhsPic(0) }
                 }
+            }
+            // RSS: the news ticker's speed
+            if (label.startsWith("RSS ")) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                VhsText(" ")
+                VhsText("SPEED ")
+                Spacer(Modifier.width(pxDp(2f)))
+                Box(Modifier.weight(1f)) { VhsBar(OsPrefs.vhsRssSpeed, slider = true) { OsPrefs.setVhsRssSpeed(it) } }
+                Spacer(Modifier.width(pxDp(2f)))
+                VhsText((OsPrefs.vhsRssSpeed * 100).roundToInt().toString().padStart(3))
             }
             if (label.startsWith("CRT ")) {
                 // SNOW: analog snow, loose specks, tape drop-outs
