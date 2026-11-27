@@ -174,9 +174,27 @@ internal fun VhsMarquee(text: String, cols: Int = 21, modifier: Modifier = Modif
             }
         }
     }
-    Box(modifier.then(if (fill) Modifier.fillMaxWidth().height(hDp) else Modifier.size(wDp, hDp)).clipToBounds()
+    // only the letters inside the window are drawn, each frame (a long news line drawn whole is tens of
+    // thousands of pixels wide and stalled the launcher)
+    val fg = color ?: o.fg
+    Canvas(modifier.then(if (fill) Modifier.fillMaxWidth().height(hDp) else Modifier.size(wDp, hDp)).clipToBounds()
         .onSizeChanged { if (fill) fieldPx.floatValue = it.width.toFloat() }) {
-        VhsText(shown, Modifier.wrapContentWidth(Alignment.Start, unbounded = true).graphicsLayer { translationX = shift.floatValue }, color = color)
+        val px = o.px
+        val cw = 6 * px
+        val x0 = shift.floatValue
+        val first = ((-x0) / cw).toInt().coerceAtLeast(0)
+        val last = ((size.width - x0) / cw).toInt() + 1
+        if (first >= shown.length || last <= 0) return@Canvas
+        val part = shown.substring(first, minOf(shown.length, last))
+        val x = x0 + first * cw + px
+        if (OsPrefs.vhsBloom) drawBloom(part, x, px, px, fg, 1.6f * VhsBloomPulse.level.floatValue)
+        val ca = OsPrefs.vhsChroma
+        if (ca > 0.01f) {
+            val dx = px * (0.35f + 1.6f * ca); val al = 0.35f + 0.4f * ca
+            drawGlyphs(part, x - dx, px, px, null, Color(0xFFFF1A40).copy(alpha = al))
+            drawGlyphs(part, x + dx, px, px, null, Color(0xFF1AE6FF).copy(alpha = al))
+        }
+        drawGlyphs(part, x, px, px, Color.Black.copy(alpha = 0.75f), fg)
     }
 }
 
