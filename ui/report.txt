@@ -1,14 +1,14 @@
 screen 320 x 640
-11-27 01:03:32.273  6513  6513 I r95     : swipe: left -> vhs:chat
+11-27 01:42:20.300  6397  6397 I r95     : swipe: left -> vhs:chat
 Warning: Activity not started, intent has been delivered to currently running top-most instance.
-notif pid: 7280
-11-27 01:03:57.460  6942  6942 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-27 01:03:57.463  6942  6942 I AndroidRuntime: Using default boot image
-11-27 01:03:57.463  6942  6942 I AndroidRuntime: Leaving lock profiling enabled
-11-27 01:03:57.881  6942  6942 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-27 01:03:57.980  6942  6942 D AndroidRuntime: Shutting down VM
-11-27 01:04:03.846  6977  6977 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-27 01:04:03.854  6977  6977 I AndroidRuntime: Using default boot image
-11-27 01:04:03.854  6977  6977 I AndroidRuntime: Leaving lock profiling enabled
-11-27 01:04:03.932  6977  6977 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-27 01:04:03.939  6977  6977 D AndroidRuntime: Shutting down VM
+notif pid: 7042
+11-27 01:42:40.095  6655  6655 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-27 01:42:40.097  6655  6655 I AndroidRuntime: Using default boot image
+11-27 01:42:40.097  6655  6655 I AndroidRuntime: Leaving lock profiling enabled
+11-27 01:42:40.346  6655  6655 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-27 01:42:40.379  6655  6655 D AndroidRuntime: Shutting down VM
+11-27 01:42:45.945  6711  6711 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-27 01:42:45.946  6711  6711 I AndroidRuntime: Using default boot image
+11-27 01:42:45.947  6711  6711 I AndroidRuntime: Leaving lock profiling enabled
+11-27 01:42:46.003  6711  6711 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-27 01:42:46.005  6711  6711 D AndroidRuntime: Shutting down VM
