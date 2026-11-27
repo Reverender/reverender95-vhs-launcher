@@ -532,16 +532,16 @@ private object GiantCassette : Scene {
         ribbon.reset()
         for (k in 0..44) {
             val u = k / 44f
-            val x = size.width * (0.55f + 0.5f * u) + sin(u * 7f - s * 2.2f) * size.width * 0.05f * u
-            val y = size.height * (0.56f + 0.42f * u) + sin(u * 9f - s * 3f) * size.height * 0.03f
+            val x = size.width * (0.5f + 0.55f * u) + sin(u * 7f - s * 2.2f) * size.width * 0.05f * u
+            val y = size.height * (0.52f + 0.46f * u) + sin(u * 9f - s * 3f) * size.height * 0.03f
             if (k == 0) ribbon.moveTo(x, y) else ribbon.lineTo(x, y)
         }
         drawPath(ribbon, Color(0xFF2A160C), style = Stroke(size.minDimension * 0.022f))
         drawPath(ribbon, Color(0xFF8A5A30).copy(alpha = 0.7f), style = Stroke(size.minDimension * 0.006f))
-        tape.ay = sin(s * 0.4f) * 0.35f + 0.3f; tape.ax = -0.9f + sin(s * 0.3f) * 0.1f
+        tape.ay = sin(s * 0.4f) * 0.3f + 0.25f; tape.ax = -0.62f + sin(s * 0.3f) * 0.08f
         tape.y = sin(s * 0.8f) * 0.06f
         tape.face = { fi, r -> if (fi == 4) tapeTop(r, s) else if (fi == 0) drawRect(CYAN.copy(alpha = 0.8f), Offset(r.left, r.top + r.height * 0.35f), Size(r.width, r.height * 0.3f)) }
-        solids(listOf(tape), size.width / 2, size.height * 0.48f, size.minDimension * 0.42f)
+        solids(listOf(tape), size.width / 2, size.height * 0.46f, size.minDimension * 0.3f)
     }
 }
 
