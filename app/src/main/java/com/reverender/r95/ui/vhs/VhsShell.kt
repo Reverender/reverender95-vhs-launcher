@@ -774,13 +774,21 @@ fun VhsShell(onShutDown: () -> Unit) {
     val state = LocalAppState.current
     var screen by remember { mutableStateOf(Screen.MAIN) }
     // switching menus: a short "channel change" (0 = just switched … 1 = settled)
-    val switchP = remember { androidx.compose.animation.core.Animatable(1f) }
+    // (stepped by the clock, not by screen frames: it always runs out, even if the launcher was away)
+    val switchP = remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
     var lastScreen by remember { mutableStateOf(screen) }
     LaunchedEffect(screen) {
         if (screen == lastScreen) return@LaunchedEffect
         lastScreen = screen
-        switchP.snapTo(0f)
-        switchP.animateTo(1f, androidx.compose.animation.core.tween(VhsTestHooks.switchMs, easing = androidx.compose.animation.core.LinearEasing))
+        val t0 = android.os.SystemClock.uptimeMillis()
+        try {
+            while (true) {
+                val e = (android.os.SystemClock.uptimeMillis() - t0).toFloat() / VhsTestHooks.switchMs
+                if (e >= 1f || !com.reverender.r95.core.AppVisibility.visible) break
+                switchP.floatValue = e
+                delay(16)
+            }
+        } finally { switchP.floatValue = 1f }
     }
     var chooseDir by remember { mutableStateOf("up") }
     val bg = Color(OsPrefs.vhsBg.toInt()); val fg = Color(OsPrefs.vhsFg.toInt())
@@ -928,7 +936,7 @@ fun VhsShell(onShutDown: () -> Unit) {
                         translationX = gl.tearX; translationY = gl.jitterY
                         // menu switch: the new picture rolls down into place (vertical hold), slips sideways a
                         // little, and comes up out of the dark, like a VCR finding the signal
-                        val sp = switchP.value
+                        val sp = switchP.floatValue
                         if (sp < 1f) {
                             val e = 1f - sp
                             translationY += -size.height * 0.10f * e * e * e + kotlin.math.sin(sp * 30f) * px * 1.5f * e
@@ -1026,7 +1034,7 @@ fun VhsShell(onShutDown: () -> Unit) {
             if (drawerShown || drawerReady) VhsAppsDrawer({ drawerP }, widthPx, drawerShown, onClose = { settleDrawer(false) })
         }
       }
-      if (switchP.value < 1f) VhsSwitchFx({ switchP.value })
+      if (switchP.floatValue < 1f) VhsSwitchFx({ switchP.floatValue })
       if (crt) CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsCrt(clock, g, sched, track) }
       // full-screen video sits above everything: edge to edge, no CRT
       if (screen == Screen.VIDEO && deck.mode == "video" && deck.fullscreen && deck.loaded)
@@ -1049,9 +1057,16 @@ fun VhsShell(onShutDown: () -> Unit) {
               // 2) play when the picture can actually be seen again: screen on, lock screen gone, the launcher's
               //    window in front with focus. Checked directly each time (no one-shot unlock signal to miss), so
               //    quick relocks, "lock after N seconds" and Smart Lock all end up here
+              // (some phones hand the window its focus late, or not at all, after unlocking: once the screen is
+              //  on, unlocked and the launcher is showing, it plays after 0.6 s at the latest)
+              var readySince = 0L
               while (true) {
                   val on = pm.isInteractive
-                  if (on && VhsPowerOn.focused && !km.isKeyguardLocked) break
+                  val unlocked = !km.isKeyguardLocked
+                  val showing = com.reverender.r95.core.AppVisibility.visible
+                  val now = android.os.SystemClock.uptimeMillis()
+                  if (on && unlocked && showing) { if (readySince == 0L) readySince = now } else readySince = 0L
+                  if (on && unlocked && (VhsPowerOn.focused || readySince != 0L && now - readySince > 600)) break
                   delay(if (on) 30 else 400)
               }
               android.util.Log.i("r95", "power: on")
