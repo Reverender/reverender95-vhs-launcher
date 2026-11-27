@@ -497,7 +497,7 @@ internal fun VhsTimeline(value: Float, onSeek: (Float) -> Unit) {
 
 /** The boxed header with two rules, like "VHS/VCR MENU". */
 @Composable
-internal fun VhsHeader(title: String, sub: String) {
+internal fun VhsHeader(title: String, sub: String, subContent: (@Composable () -> Unit)? = null) {
     val o = LocalOsd.current
     Box(Modifier.fillMaxWidth().padding(bottom = pxDp(2f))) {
         Canvas(Modifier.matchParentSize()) {
@@ -512,14 +512,14 @@ internal fun VhsHeader(title: String, sub: String) {
         Column(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) {
             VhsText(title)
             Spacer(Modifier.height(pxDp(1f)))
-            VhsText(sub)
+            if (subContent != null) subContent() else VhsText(sub)
         }
     }
 }
 
 /** one-line version of [VhsHeader] */
 @Composable
-internal fun VhsHeader1(title: String) {
+internal fun VhsHeader1(title: String, content: (@Composable () -> Unit)? = null) {
     val o = LocalOsd.current
     Box(Modifier.fillMaxWidth().padding(bottom = pxDp(2f))) {
         Canvas(Modifier.matchParentSize()) {
@@ -528,7 +528,7 @@ internal fun VhsHeader1(title: String) {
             for ((col, off) in listOf(Color.Black.copy(alpha = 0.7f) to px * 0.6f, o.fg to 0f))
                 drawRect(col, Offset(off, off), Size(size.width - px, size.height - px), style = Stroke(px * 0.5f))
         }
-        Column(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) { VhsText(title) }
+        Column(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) { if (content != null) content() else VhsText(title) }
     }
 }
 
@@ -1176,10 +1176,15 @@ private fun VhsMain(fit: FitState, availH: Float, onMenu: () -> Unit, onLoad: ()
         }
     }, body = {
         // the title bars: both lines empty (SETUP's TITLE1 / TITLE2) → no bars at all, one empty → a single bar
-        val t1 = OsPrefs.vhsTitle1.trim(); val t2 = OsPrefs.vhsTitle2.trim()
+        // the title block: TITLE1 on top, the news ticker (SETUP > RSS) running through the second line
+        val t1 = OsPrefs.vhsTitle1.trim(); val rss = OsPrefs.vhsRss.trim()
+        LaunchedEffect(rss) { VhsRss.run(rss) }
+        val news: @Composable () -> Unit = { VhsMarquee(vhsSafe(VhsRss.ticker()).trim(), cols = 21) }
         // (VHS+ APK: the notification area sits at the right end of the top bar)
-        if (t1.isNotEmpty() || t2.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
-            if (t1.isNotEmpty() && t2.isNotEmpty()) VhsHeader(t1, t2) else VhsHeader1(t1.ifEmpty { t2 })
+        if (t1.isNotEmpty() || rss.isNotEmpty()) Box(Modifier.fillMaxWidth()) {
+            if (t1.isNotEmpty() && rss.isNotEmpty()) VhsHeader(t1, "", news)
+            else if (t1.isNotEmpty()) VhsHeader1(t1)
+            else VhsHeader1("", news)
             VhsNotifArea(Modifier.align(Alignment.TopEnd).padding(top = pxDp(1f), end = pxDp(2f)))
         }
         // swipe up opens the phone keyboard for this search; its enter key launches the top match
@@ -1861,7 +1866,9 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         // lettering styles of different VCR makers: tap for the next one, it loops
         "FONT  " + VHS_FONTS[OsPrefs.vhsFont.coerceIn(0, VHS_FONTS.size - 1)] to { OsPrefs.setVhsFont((OsPrefs.vhsFont + 1) % VHS_FONTS.size) },
         ("TITLE1 " + OsPrefs.vhsTitle1.take(14) + if (editTitle == 1 && blink) "_" else "") to { editTitle = 1 },
-        ("TITLE2 " + OsPrefs.vhsTitle2.take(14) + if (editTitle == 2 && blink) "_" else "") to { editTitle = 2 },
+        // the news ticker's feed: tap and type an RSS address (empty = no ticker)
+        ("RSS    " + (if (editTitle == 2) vhsSafe(OsPrefs.vhsRss).takeLast(13) + (if (blink) "_" else "")
+            else OsPrefs.vhsRss.trim().ifEmpty { "OFF" }.let { u -> if (u == "OFF") u else vhsSafe(runCatching { java.net.URI(if (u.startsWith("http")) u else "https://$u").host }.getOrNull() ?: u).removePrefix("WWW.").removePrefix("FEEDS.").take(14) })) to { editTitle = 2 },
         "SWIPE◀ " + targetName(OsPrefs.vhsSwipe["left"].orEmpty()) to { onChoose("left") },
         "SWIPE▶ " + targetName(OsPrefs.vhsSwipe["right"].orEmpty()) to { onChoose("right") },
         "PIN APPS" to { onChoose("pin") },
@@ -1877,10 +1884,12 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
     ))
     // typing a header line: the phone keyboard opens on it, enter finishes
     if (editTitle != 0) {
-        RegisterKb(VhsKb(
-            { if (editTitle == 1) OsPrefs.vhsTitle1 else OsPrefs.vhsTitle2 },
-            { t -> val v = t.take(20); if (editTitle == 1) OsPrefs.setVhsTitles(v, OsPrefs.vhsTitle2) else OsPrefs.setVhsTitles(OsPrefs.vhsTitle1, v) },
-        ) { editTitle = 0 })
+        // (an RSS address keeps its exact letters; a title goes through the OSD font)
+        androidx.compose.runtime.key(editTitle) { RegisterKb(VhsKb(
+            { if (editTitle == 1) OsPrefs.vhsTitle1 else OsPrefs.vhsRss },
+            { t -> if (editTitle == 1) OsPrefs.setVhsTitles(t.take(20), OsPrefs.vhsTitle2) else OsPrefs.setVhsRss(t.trim().take(400)) },
+            raw = editTitle == 2,
+        ) { editTitle = 0 }) }
         LaunchedEffect(editTitle) { delay(50); openKb() }
     }
     FitPage(fit, availH, 1.6f, hint = {
@@ -1891,7 +1900,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
             }
         }
     }, body = {
-        VhsHeader("VHS/VCR SETUP", OsPrefs.vhsTitle2)
+        VhsHeader("VHS/VCR SETUP", OsPrefs.vhsTitle1.ifBlank { "REVERENDER 95" })
         items.forEachIndexed { i, (label, act) ->
             Row(Modifier.fillMaxWidth().pointerInput(label) { detectTapGestures { Haptics.tick(); cursor = i; act() } }, verticalAlignment = Alignment.CenterVertically) {
                 VhsText(if (cursor == i) "▶" else " ")

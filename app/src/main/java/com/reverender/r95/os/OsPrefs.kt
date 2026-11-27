@@ -53,7 +53,7 @@ object OsPrefs {
             for (i in 0 until a.length()) a.optJSONObject(i)?.let { o -> vhsPlaylist.add(o.optString("n") to o.optString("u")) }
         }
         vidFxOn = p.getBoolean("vhs_vid_fx", true)
-        vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"
+        vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"; vhsRss = p.getString("vhs_rss", null) ?: com.reverender.r95.ui.vhs.VhsRss.DEFAULT
         vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1).takeIf { it < 3 } ?: -1; vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
         vhsPic = p.getInt("vhs_pic", 0); vhsPicDim = p.getFloat("vhs_pic_dim", 0.35f)
         vidColor = p.getFloat("vhs_vid_color", 0.45f); vidBlur = p.getFloat("vhs_vid_blur", 0.25f); vidChroma = p.getFloat("vhs_vid_chroma", 0.4f); vidNoise = p.getFloat("vhs_vid_noise", 0.3f)
@@ -168,6 +168,9 @@ object OsPrefs {
     /** the two lines in the VHS menu's header box */
     @set:JvmName("vhsTitle1Internal") var vhsTitle1 by mutableStateOf("VHS/VCR MENU"); private set
     @set:JvmName("vhsTitle2Internal") var vhsTitle2 by mutableStateOf("REVERENDER 95"); private set
+    /** the news ticker's feed (blank = no ticker) */
+    @set:JvmName("vhsRssInternal") var vhsRss by mutableStateOf(com.reverender.r95.ui.vhs.VhsRss.DEFAULT); private set
+    fun setVhsRss(v: String) { vhsRss = v; put { putString("vhs_rss", v) } }
     fun setVhsTitles(a: String, b: String) { vhsTitle1 = a; vhsTitle2 = b; put { putString("vhs_title1", a); putString("vhs_title2", b) } }
     /** HD rumble: the vibration motor plays the music's low end */
     /** CRT motion blur on the whole interface (text, keys, lists); 0 = off */
