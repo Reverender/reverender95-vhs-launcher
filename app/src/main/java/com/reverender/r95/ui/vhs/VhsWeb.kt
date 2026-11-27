@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.layout.onSizeChanged
 import com.reverender.r95.os.Haptics
 import com.reverender.r95.os.OsPrefs
 
@@ -110,29 +111,37 @@ internal fun VhsWeb(onExit: () -> Unit) {
         RegisterKb(VhsKb({ typing.orEmpty() }, { typing = it.take(500) }, raw = true, label = "WEB ADDRESS OR SEARCH") { go(typing.orEmpty()) })
         androidx.compose.runtime.LaunchedEffect(Unit) { kotlinx.coroutines.delay(50); openKb() }
     }
-    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
-        // the controls
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2f)), verticalAlignment = Alignment.CenterVertically) {
-            VhsKey("◀", boxed = true) { if (web.canGoBack()) web.goBack() }
-            VhsKey("▶", boxed = true) { if (web.canGoForward()) web.goForward() }
-            VhsKey(if (progress in 1..99) "STOP" else "RELOAD", boxed = true) { if (progress in 1..99) web.stopLoading() else web.reload() }
-            VhsKey("HOME", boxed = true) { go(OsPrefs.vhsWebHome) }
+    // the page first, the controls drawn over it afterwards (an Android web view paints over whatever came
+    // before it on screen); the page is kept clear of the control bars by their measured heights
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    var topH by remember { mutableIntStateOf(0) }
+    var botH by remember { mutableIntStateOf(0) }
+    Box(Modifier.fillMaxSize().imePadding()) {
+        AndroidView({ web }, Modifier.fillMaxSize().padding(top = with(d) { topH.toDp() }, bottom = with(d) { botH.toDp() }))
+        Column(Modifier.fillMaxWidth().background(o.bg).onSizeChanged { topH = it.height }.padding(horizontal = pxDp(2f), vertical = pxDp(2f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2f)), verticalAlignment = Alignment.CenterVertically) {
+                VhsKey("◀", boxed = true) { if (web.canGoBack()) web.goBack() }
+                VhsKey("▶", boxed = true) { if (web.canGoForward()) web.goForward() }
+                VhsKey(if (progress in 1..99) "STOP" else "RELOAD", boxed = true) { if (progress in 1..99) web.stopLoading() else web.reload() }
+                VhsKey("HOME", boxed = true) { go(OsPrefs.vhsWebHome) }
+            }
+            // the address line: tap to type an address or a search
+            Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); typing = "" } }) {
+                val shown = typing?.let { vhsSafe(it).takeLast(19) + if (blink) "_" else " " }
+                    ?: vhsSafe(url.removePrefix("https://").removePrefix("http://").removePrefix("www.")).take(21)
+                VhsText(shown, invert = true)
+            }
+            // loading bar
+            Box(Modifier.fillMaxWidth().height(pxDp(1.2f))) {
+                if (progress in 1..99) Box(Modifier.fillMaxWidth(progress / 100f).height(pxDp(1.2f)).background(o.fg))
+            }
         }
-        // the address line: tap to type an address or a search
-        Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); typing = "" } }) {
-            val shown = typing?.let { vhsSafe(it).takeLast(19) + if (blink) "_" else " " }
-                ?: vhsSafe(url.removePrefix("https://").removePrefix("http://").removePrefix("www.")).take(21)
-            VhsText(shown, invert = true)
-        }
-        // loading: a tape counter style bar
-        Box(Modifier.fillMaxWidth().height(pxDp(1.2f))) {
-            if (progress in 1..99) Box(Modifier.fillMaxWidth(progress / 100f).height(pxDp(1.2f)).background(o.fg))
-        }
-        AndroidView({ web }, Modifier.fillMaxWidth().weight(1f))
-        Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onExit() } }) {
-            Column {
-                VhsText(vhsSafe(title).trim().ifEmpty { "VHS WEB" }.take(21), invert = true)
-                VhsText("TAP HERE TO RETURN", invert = true)
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(o.bg).onSizeChanged { botH = it.height }.padding(horizontal = pxDp(2f), vertical = pxDp(1f))) {
+            Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); onExit() } }) {
+                Column {
+                    VhsText(vhsSafe(title).trim().ifEmpty { "VHS WEB" }.take(21), invert = true)
+                    VhsText("TAP HERE TO RETURN", invert = true)
+                }
             }
         }
     }
