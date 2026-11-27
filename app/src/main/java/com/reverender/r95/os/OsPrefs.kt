@@ -54,7 +54,7 @@ object OsPrefs {
         }
         vidFxOn = p.getBoolean("vhs_vid_fx", true)
         vhsTitle1 = p.getString("vhs_title1", null) ?: "VHS/VCR MENU"; vhsTitle2 = p.getString("vhs_title2", null) ?: "REVERENDER 95"; vhsRss = p.getString("vhs_rss", null) ?: com.reverender.r95.ui.vhs.VhsRss.DEFAULT; vhsRssSpeed = p.getFloat("vhs_rss_speed", 0.4f); vhsDrawer = p.getInt("vhs_drawer", 0)
-        vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1).takeIf { it < 3 } ?: -1; vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
+        vhsUiBlur = p.getFloat("vhs_ui_blur", 0f); vhsWall = p.getInt("vhs_wall", -1).takeIf { it < 6 } ?: -1; vhsVizTheme = p.getInt("vhs_viz", 0); vhsFont = p.getInt("vhs_font", 0); vhsWide = p.getString("vhs_wide", "LOAD") ?: "LOAD"
         vhsPic = p.getInt("vhs_pic", 0); vhsPicDim = p.getFloat("vhs_pic_dim", 0.35f)
         vidColor = p.getFloat("vhs_vid_color", 0.45f); vidBlur = p.getFloat("vhs_vid_blur", 0.25f); vidChroma = p.getFloat("vhs_vid_chroma", 0.4f); vidNoise = p.getFloat("vhs_vid_noise", 0.3f)
         vhsChroma = p.getFloat("vhs_chroma", 0.35f); vhsTrack = p.getFloat("vhs_track", 0.5f)

@@ -39,7 +39,7 @@ import kotlin.math.sin
  * The CRT motion blur (BGBLUR) repeats only the moving middle, a moment earlier and faint.
  */
 object VhsWalls {
-    val names = listOf("TAPE TOWER", "CHANNEL SURF", "MALLSOFT CUBES")
+    val names = listOf("TAPE TOWER", "CHANNEL SURF", "MALLSOFT CUBES", "GIANT CASSETTE", "LASERDISC", "PRISM PYRAMID")
 }
 
 private val PINK = Color(0xFFFF2BD6)
@@ -104,7 +104,7 @@ private interface Scene {
     fun DrawScope.overlay(s: Float) {}
 }
 
-private val SCENES: List<Scene> = listOf(TapeTower, ChannelSurf, MallsoftCubes)
+private val SCENES: List<Scene> = listOf(TapeTower, ChannelSurf, MallsoftCubes, GiantCassette, Laserdisc, PrismPyramid)
 
 // ---------------------------------------------------------------- helpers
 
@@ -498,3 +498,127 @@ private object MallsoftCubes : Scene {
     }
 }
 
+
+/** a VHS tape's top face: paper label, window, two turning reels */
+private fun DrawScope.tapeTop(r: Rect, s: Float, dir: Float = 1f) {
+    drawRect(Color(0xFFF2EBD9), Offset(r.left + r.width * 0.12f, r.top + r.height * 0.12f), Size(r.width * 0.76f, r.height * 0.22f))
+    drawRect(PINK.copy(alpha = 0.85f), Offset(r.left + r.width * 0.12f, r.top + r.height * 0.12f), Size(r.width * 0.76f, r.height * 0.05f))
+    val wy = r.top + r.height * 0.45f
+    drawRect(Color(0xFF0B0812), Offset(r.left + r.width * 0.25f, wy), Size(r.width * 0.5f, r.height * 0.32f))
+    for (k in 0..1) {
+        val c = Offset(r.left + r.width * (0.36f + 0.28f * k), wy + r.height * 0.16f)
+        val rr = minOf(r.width * 0.09f, r.height * 0.14f)
+        // the wound tape around the left reel shrinks as the right one grows
+        val wound = rr * (1.15f + 0.5f * (if (k == 0) 0.5f + 0.5f * sin(s * 0.1f) else 0.5f - 0.5f * sin(s * 0.1f)))
+        drawCircle(Color(0xFF3A2416), wound, c)
+        drawCircle(Color(0xFFDDDDDD), rr, c)
+        val a = s * 4f * dir
+        for (sp in 0 until 3) { val an = a + sp * 2.094f; drawLine(Color(0xFF333333), c, c + Offset(cos(an) * rr, sin(an) * rr), 1.5f) }
+        drawCircle(Color(0xFF333333), rr * 0.25f, c)
+    }
+}
+
+/** 3: one giant VHS tape, tilted and turning, reels spinning, the tape ribbon waving out of it */
+private object GiantCassette : Scene {
+    private val tape = Box3(0f, 0f, 0.3f, 1.4f, 0.2f, 0.85f, col = Color(0xFF1C1626), edge = PINK)
+    private val ribbon = Path()
+    override fun DrawScope.back() {
+        sky(Color(0xFF12052A), Color(0xFF5A1A6E), size.height)
+        glow(Offset(size.width / 2, size.height * 0.45f), size.minDimension * 0.7f, VIOLET, 0.4f)
+    }
+    override fun DrawScope.move(s: Float) {
+        twinkle(size.height, s, 24)
+        // the ribbon: out of the cassette's mouth, waving down off the screen
+        ribbon.reset()
+        for (k in 0..44) {
+            val u = k / 44f
+            val x = size.width * (0.55f + 0.5f * u) + sin(u * 7f - s * 2.2f) * size.width * 0.05f * u
+            val y = size.height * (0.56f + 0.42f * u) + sin(u * 9f - s * 3f) * size.height * 0.03f
+            if (k == 0) ribbon.moveTo(x, y) else ribbon.lineTo(x, y)
+        }
+        drawPath(ribbon, Color(0xFF2A160C), style = Stroke(size.minDimension * 0.022f))
+        drawPath(ribbon, Color(0xFF8A5A30).copy(alpha = 0.7f), style = Stroke(size.minDimension * 0.006f))
+        tape.ay = sin(s * 0.4f) * 0.35f + 0.3f; tape.ax = -0.9f + sin(s * 0.3f) * 0.1f
+        tape.y = sin(s * 0.8f) * 0.06f
+        tape.face = { fi, r -> if (fi == 4) tapeTop(r, s) else if (fi == 0) drawRect(CYAN.copy(alpha = 0.8f), Offset(r.left, r.top + r.height * 0.35f), Size(r.width, r.height * 0.3f)) }
+        solids(listOf(tape), size.width / 2, size.height * 0.48f, size.minDimension * 0.42f)
+    }
+}
+
+/** 4: a huge laserdisc spinning over the grid, a rainbow sheen sweeping across its mirror side */
+private object Laserdisc : Scene {
+    override fun DrawScope.back() {
+        val hz = size.height * 0.64f
+        sky(Color(0xFF1A0636), Color(0xFF7A1E6C), hz)
+        sun(size.width / 2, hz - size.width * 0.06f, size.width * 0.2f, hz)
+        floor(hz, NIGHT, PINK)
+    }
+    override fun DrawScope.move(s: Float) {
+        val hz = size.height * 0.64f
+        grid(s, hz, PINK, 0.2f, lanes = 12, col2 = VIOLET, rows = 12)
+        val cx = size.width / 2; val cy = size.height * 0.4f + sin(s * 0.9f) * size.minDimension * 0.012f
+        val rx = size.width * 0.4f; val ry = rx * (0.35f + 0.1f * sin(s * 0.4f))
+        // shadow on the floor and the disc's edge
+        drawOval(Color.Black.copy(alpha = 0.35f), Offset(cx - rx * 0.8f, size.height * 0.8f), Size(rx * 1.6f, size.minDimension * 0.03f))
+        drawOval(Color(0xFF4A4A58), Offset(cx - rx, cy - ry + size.minDimension * 0.012f), Size(rx * 2, ry * 2))
+        // the mirror side: silver with a rainbow band moving across
+        val sw = (s * 0.3f) % 1.3f - 0.15f
+        val stops = arrayOf(
+            0f to Color(0xFFB8B8CC), (sw - 0.16f).coerceIn(0.01f, 0.97f) to Color(0xFFE2E2F2),
+            (sw - 0.06f).coerceIn(0.02f, 0.98f) to Color(0xFFFF6EC7), sw.coerceIn(0.03f, 0.985f) to Color(0xFF29F3FF),
+            (sw + 0.06f).coerceIn(0.04f, 0.99f) to Color(0xFFFFE860), (sw + 0.16f).coerceIn(0.05f, 0.995f) to Color(0xFFD8D8EA), 1f to Color(0xFF9A9AB2),
+        )
+        drawOval(Brush.horizontalGradient(colorStops = stops, startX = cx - rx, endX = cx + rx), Offset(cx - rx, cy - ry), Size(rx * 2, ry * 2))
+        // grooves: faint rings with short bright arcs going round
+        for (k in 2..9) {
+            val f = k / 10f
+            val tl = Offset(cx - rx * f, cy - ry * f); val sz = Size(rx * 2 * f, ry * 2 * f)
+            drawOval(Color.White.copy(alpha = 0.08f), tl, sz, style = Stroke(1f))
+            drawArc(Color.White.copy(alpha = 0.35f), (s * 140f * (1.2f - f)) % 360f, 40f, false, tl, sz, style = Stroke(1.4f))
+        }
+        // label and hole
+        drawOval(Color(0xFFFF6EC7), Offset(cx - rx * 0.22f, cy - ry * 0.22f), Size(rx * 0.44f, ry * 0.44f))
+        drawOval(NIGHT, Offset(cx - rx * 0.05f, cy - ry * 0.05f), Size(rx * 0.1f, ry * 0.1f))
+        glow(Offset(cx - rx * 0.4f, cy - ry * 0.3f), rx * 0.25f, Color.White, 0.25f)
+    }
+}
+
+/** 5: a glass pyramid turning in the dark; a white beam goes in and fans out into pastel colours */
+private object PrismPyramid : Scene {
+    private val PASTELS = listOf(Color(0xFFFFB3DE), Color(0xFFFFCBA4), Color(0xFFFFF5A8), Color(0xFF9FFFE0), Color(0xFF9BE7FF), Color(0xFFC9A0FF))
+    private val face = Path()
+    private val bx = FloatArray(3); private val by = FloatArray(3); private val bz = FloatArray(3)
+    override fun DrawScope.back() {
+        sky(NIGHT, Color(0xFF1E0A3A), size.height)
+        floor(size.height * 0.78f, NIGHT, VIOLET)
+    }
+    override fun DrawScope.move(s: Float) {
+        twinkle(size.height * 0.78f, s, 20)
+        val cx = size.width / 2; val cy = size.height * 0.46f; val r = size.width * 0.3f
+        val hit = Offset(cx - r * 0.32f, cy)
+        val out = Offset(cx + r * 0.3f, cy + r * 0.02f)
+        // the white beam in
+        neon(Color.White, Offset(0f, cy + r * 0.12f), hit, size.minDimension * 0.008f)
+        // the spectrum out, gently waving
+        PASTELS.forEachIndexed { i, c ->
+            val ey = cy - r * 0.45f + i * r * 0.2f + sin(s * 1.2f + i) * r * 0.03f
+            neon(c, out, Offset(size.width, ey), size.minDimension * 0.012f, 0.9f)
+        }
+        // the pyramid: three base corners turning round, an apex above; back faces first
+        val a = s * 0.4f
+        for (i in 0..2) { val an = a + i * 2.094f; bx[i] = cos(an); bz[i] = sin(an); by[i] = 0.45f }
+        val apexY = -0.9f
+        val order = intArrayOf(0, 1, 2).sortedByDescending { i -> (bz[i] + bz[(i + 1) % 3]) / 2 }
+        for ((k, i) in order.withIndex()) {
+            val j = (i + 1) % 3
+            fun px(x: Float, z: Float) = cx + x * r * (4f / (z * 0.35f + 4.2f))
+            fun py(y: Float, z: Float) = cy + y * r + z * r * 0.22f
+            face.reset()
+            face.moveTo(px(bx[i], bz[i]), py(by[i], bz[i])); face.lineTo(px(bx[j], bz[j]), py(by[j], bz[j])); face.lineTo(cx, cy + apexY * r); face.close()
+            drawPath(face, Color(0xFFC8DCFF).copy(alpha = 0.10f + 0.09f * k))
+            drawPath(face, Color.White.copy(alpha = 0.85f), style = Stroke(1.6f))
+        }
+        glow(hit, r * 0.18f, Color.White, 0.5f)
+        glow(out, r * 0.22f, Color(0xFFFFE0F0), 0.45f)
+    }
+}

@@ -52,6 +52,11 @@ for k in 1 2 3 6 7; do
   timeout 20 adb exec-out screencap -p > "$OUT/F$k-font.png"
 done
 timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_font 0 >/dev/null; sleep 2
+for wi in 3 4 5; do
+  timeout 20 adb shell am force-stop $NPKG
+  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi >/dev/null; sleep 7
+  timeout 20 adb exec-out screencap -p > "$OUT/NW$wi-wall.png"
+done
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 [ "$ONLY" = notif ] && exit 0
@@ -75,7 +80,7 @@ adb exec-out screencap -p > "$OUT/L3b-after-lock.png"
 timeout 10 adb shell input keyevent KEYCODE_SLEEP; sleep 20
 timeout 10 adb shell input keyevent KEYCODE_WAKEUP; sleep 1; timeout 10 adb shell input keyevent 82; sleep 1; timeout 10 adb shell wm dismiss-keyguard; sleep 5
 adb exec-out screencap -p > "$OUT/L4-after-long-lock.png"
-for wi in 0 1 2; do
+for wi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG
   timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi --ei r95_vhs_viz $((wi % 9)) --ei r95_vhs_font $((wi % 7)) --ef r95_vhs_uiblur $([ $wi = 3 ] && echo 0.8 || echo 0) >/dev/null; sleep 6
   adb exec-out screencap -p > "$OUT/W$wi-wall.png"
