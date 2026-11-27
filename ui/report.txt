@@ -1,14 +1,14 @@
 screen 320 x 640
-11-26 23:52:27.410  6222  6222 I r95     : swipe: left -> vhs:chat
+11-27 01:03:32.273  6513  6513 I r95     : swipe: left -> vhs:chat
 Warning: Activity not started, intent has been delivered to currently running top-most instance.
-notif pid: 7003
-11-26 23:52:47.306  6701  6701 I AndroidRuntime: Using default boot image
-11-26 23:52:47.306  6701  6701 I AndroidRuntime: Leaving lock profiling enabled
-11-26 23:52:47.440  6701  6701 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 23:52:47.469  6701  6701 D AndroidRuntime: Shutting down VM
-11-26 23:52:52.997  6739  6739 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-11-26 23:52:52.998  6739  6739 I AndroidRuntime: Using default boot image
-11-26 23:52:52.998  6739  6739 I AndroidRuntime: Leaving lock profiling enabled
-11-26 23:52:53.044  6739  6739 D AndroidRuntime: Calling main entry com.android.commands.input.Input
-11-26 23:52:53.052  6739  6739 D AndroidRuntime: Shutting down VM
-11-26 23:52:53.054  6739  6750 I AndroidRuntime: NOTE: attach of thread 'Binder:6739_2' failed
+notif pid: 7280
+11-27 01:03:57.460  6942  6942 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-27 01:03:57.463  6942  6942 I AndroidRuntime: Using default boot image
+11-27 01:03:57.463  6942  6942 I AndroidRuntime: Leaving lock profiling enabled
+11-27 01:03:57.881  6942  6942 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-27 01:03:57.980  6942  6942 D AndroidRuntime: Shutting down VM
+11-27 01:04:03.846  6977  6977 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-27 01:04:03.854  6977  6977 I AndroidRuntime: Using default boot image
+11-27 01:04:03.854  6977  6977 I AndroidRuntime: Leaving lock profiling enabled
+11-27 01:04:03.932  6977  6977 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-27 01:04:03.939  6977  6977 D AndroidRuntime: Shutting down VM
