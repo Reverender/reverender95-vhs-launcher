@@ -150,6 +150,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         intent?.getIntExtra("r95_vhs_font", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsFont(it) }
         intent?.getIntExtra("r95_vhs_curve", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsCurve(it / 100f) }
         intent?.getStringExtra("r95_vhs_swipe_left")?.let { com.reverender.r95.os.OsPrefs.setVhsSwipe("left", it) }
+        intent?.getStringExtra("r95_vhs_swipe_right")?.let { com.reverender.r95.os.OsPrefs.setVhsSwipe("right", it) }
         // --ei r95_vhs_switch_ms N: slow the menu-switch effect down (UI check screenshots)
         intent?.getIntExtra("r95_vhs_switch_ms", -1)?.takeIf { it > 0 }?.let { com.reverender.r95.ui.vhs.VhsTestHooks.switchMs = it }
         // --es r95_vhs_chat_test <package>: VHS CHAT also takes that package's message notifications (UI check)

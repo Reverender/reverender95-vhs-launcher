@@ -57,6 +57,13 @@ for wi in 3 4 5; do
   timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi >/dev/null; sleep 7
   timeout 20 adb exec-out screencap -p > "$OUT/NW$wi-wall.png"
 done
+# VHS WEB via swipe right, then back home (everything wiped)
+timeout 20 adb shell am force-stop $NPKG
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --es r95_vhs_swipe_right vhs:web >/dev/null; sleep 6
+adb shell input swipe $((W*15/100)) $((H/2)) $((W*85/100)) $((H/2)) 250; sleep 9
+timeout 20 adb exec-out screencap -p > "$OUT/WEB1.png"
+adb shell input keyevent KEYCODE_BACK; sleep 3
+timeout 20 adb exec-out screencap -p > "$OUT/WEB2-home.png"
 echo "notif pid: $(adb shell pidof $NPKG)"; adb logcat -d | grep -E "FATAL|AndroidRuntime" | tail -10
 timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/null
 [ "$ONLY" = notif ] && exit 0
