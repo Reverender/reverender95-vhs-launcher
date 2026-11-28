@@ -1,25 +1,39 @@
 shot c01
 shot c02a
 shot c02b
+shot c02c
 shot c03a
 shot c03b
+shot c03c
 shot c04a
 shot c04b
+shot c04c
 shot c05a
 shot c05b
-pid: 3115
-11-28 09:27:02.824   959   959 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
-total 20280
-drwxr-xr-x  2 runner runner    4096 Nov 28 09:28 .
-drwxr-xr-x 12 runner runner    4096 Nov 28 09:27 ..
--rw-r--r--  1 runner runner 2152816 Nov 28 09:27 c01.png
--rw-r--r--  1 runner runner 2150387 Nov 28 09:27 c02a.png
--rw-r--r--  1 runner runner 2157027 Nov 28 09:27 c02b.png
--rw-r--r--  1 runner runner 2156614 Nov 28 09:27 c03a.png
--rw-r--r--  1 runner runner 2159578 Nov 28 09:27 c03b.png
--rw-r--r--  1 runner runner 2157988 Nov 28 09:27 c04a.png
--rw-r--r--  1 runner runner 2160697 Nov 28 09:27 c04b.png
--rw-r--r--  1 runner runner 2159492 Nov 28 09:28 c05a.png
--rw-r--r--  1 runner runner 2154223 Nov 28 09:28 c05b.png
--rw-r--r--  1 runner runner      36 Nov 28 09:27 install.txt
--rw-r--r--  1 runner runner 1330444 Nov 28 09:28 tour.mp4
+shot c05c
+shot c06a
+shot c06b
+shot c06c
+pid: 3194
+11-28 09:35:46.077   958   958 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+total 31628
+drwxr-xr-x  2 runner runner    4096 Nov 28 09:37 .
+drwxr-xr-x 12 runner runner    4096 Nov 28 09:35 ..
+-rw-r--r--  1 runner runner 2089362 Nov 28 09:36 c01.png
+-rw-r--r--  1 runner runner 2132821 Nov 28 09:36 c02a.png
+-rw-r--r--  1 runner runner 1798374 Nov 28 09:36 c02b.png
+-rw-r--r--  1 runner runner 1788400 Nov 28 09:36 c02c.png
+-rw-r--r--  1 runner runner 1764992 Nov 28 09:36 c03a.png
+-rw-r--r--  1 runner runner 1688963 Nov 28 09:36 c03b.png
+-rw-r--r--  1 runner runner 1687572 Nov 28 09:36 c03c.png
+-rw-r--r--  1 runner runner 2118041 Nov 28 09:36 c04a.png
+-rw-r--r--  1 runner runner 1720916 Nov 28 09:36 c04b.png
+-rw-r--r--  1 runner runner 1832283 Nov 28 09:36 c04c.png
+-rw-r--r--  1 runner runner 2121585 Nov 28 09:36 c05a.png
+-rw-r--r--  1 runner runner 2209900 Nov 28 09:36 c05b.png
+-rw-r--r--  1 runner runner 2127397 Nov 28 09:36 c05c.png
+-rw-r--r--  1 runner runner 2146154 Nov 28 09:36 c06a.png
+-rw-r--r--  1 runner runner 1231416 Nov 28 09:36 c06b.png
+-rw-r--r--  1 runner runner 1769599 Nov 28 09:36 c06c.png
+-rw-r--r--  1 runner runner      36 Nov 28 09:35 install.txt
+-rw-r--r--  1 runner runner 2109173 Nov 28 09:37 tour.mp4
