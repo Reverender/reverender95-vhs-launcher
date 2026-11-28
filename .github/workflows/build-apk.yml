@@ -40,6 +40,19 @@ jobs:
           done
           ls -la "$d"
 
+      - name: Emulator cores for the Google Play edition (native libraries per CPU, nothing downloaded at run time)
+        run: |
+          set -e
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            d=app/src/play/jniLibs/$abi; mkdir -p "$d"
+            for c in fceumm snes9x gambatte mgba mupen64plus_next_gles3; do
+              curl -fsSL --retry 3 -o /tmp/$c-$abi.zip "https://buildbot.libretro.com/nightly/android/latest/$abi/${c}_libretro_android.so.zip" || { echo "skip $c $abi"; continue; }
+              unzip -o -q /tmp/$c-$abi.zip -d /tmp/core-$abi || true
+              [ -f /tmp/core-$abi/${c}_libretro_android.so ] && mv /tmp/core-$abi/${c}_libretro_android.so "$d/lib${c}_libretro_android.so"
+            done
+            ls -la "$d"
+          done
+
       - name: Build debug and release APKs
         env:
           R95_STORE_PASS: ${{ secrets.R95_STORE_PASS }}
@@ -47,14 +60,17 @@ jobs:
           R95_KEY_PASS: ${{ secrets.R95_KEY_PASS }}
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleVhsRelease assembleVhsnotifRelease
-          mkdir -p dist dist-notif
+          ./gradlew --no-daemon --stacktrace assembleVhsRelease assembleVhsnotifRelease assemblePlayRelease bundlePlayRelease
+          mkdir -p dist dist-notif dist-play
+          # Google Play edition: the app bundle to upload, plus an APK to try it out
+          cp app/build/outputs/bundle/playRelease/*.aab dist-play/REVERENDER-VHS-PLAY.aab
+          cp app/build/outputs/apk/play/release/*.apk dist-play/REVERENDER-VHS-PLAY-test.apk
           cp app/build/outputs/apk/vhs/release/*.apk dist/REVERENDER_95-VHS.apk
           # VHS+ : the same launcher with the notification area (notification access), a separate app
           cp app/build/outputs/apk/vhsnotif/release/*.apk dist-notif/REVERENDER_95-VHS-PLUS-NOTIFICATIONS.apk
           # what each APK asks for, and which key signed it
           BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          for a in dist/*.apk dist-notif/*.apk; do echo "== $a"; "$BT/aapt" dump permissions "$a" | grep -o "name='[^']*'" | sort -u || true
+          for a in dist/*.apk dist-notif/*.apk dist-play/*.apk; do echo "== $a"; "$BT/aapt" dump permissions "$a" | grep -o "name='[^']*'" | sort -u || true
             "$BT/apksigner" verify --print-certs "$a" | grep -E "certificate DN|SHA-256" | head -2 || true; done
 
       - name: Check old-device compatibility (Android 5.0+ API usage)
@@ -72,6 +88,7 @@ jobs:
           path: |
             dist/*.apk
             dist-notif/*.apk
+            dist-play/*
           if-no-files-found: error
           retention-days: 1
 
@@ -94,7 +111,9 @@ jobs:
           tag_name: latest
           name: REVERENDER_95 VHS launcher — latest build
           prerelease: true
-          files: dist-notif/*.apk
+          files: |
+            dist-notif/*.apk
+            dist-play/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 permissions:

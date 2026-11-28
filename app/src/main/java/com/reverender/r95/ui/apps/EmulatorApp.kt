@@ -476,6 +476,13 @@ internal fun romProblem(f: File): String? {
 
 /** Downloads (once) and returns the libretro core [core] for this phone's CPU. Shared by RETRO_EMU_95 and the VHS GAME DECK. */
 internal suspend fun ensureEmuCore(context: android.content.Context, core: String, progress: (String) -> Unit): File {
+    // Play edition: the cores come with the app as native libraries (installed for this phone's CPU by Play);
+    // nothing is copied or downloaded
+    if (com.reverender.r95.BuildConfig.PLAY) {
+        val lib = File(context.applicationInfo.nativeLibraryDir, "lib${core}_libretro_android.so")
+        if (lib.exists()) return lib
+        throw java.io.IOException("THIS SYSTEM ISN'T AVAILABLE ON THIS PHONE")
+    }
     val abi = Build.SUPPORTED_ABIS.firstOrNull { it in listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86") } ?: "armeabi-v7a"
     val dir = File(context.filesDir, "cores/$abi").apply { mkdirs() }
     val so = File(dir, "${core}_libretro_android.so")

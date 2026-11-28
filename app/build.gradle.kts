@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.reverender.r95"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.reverender.r95"
@@ -63,7 +63,7 @@ android {
         create("vhs") {
             dimension = "dist"; applicationIdSuffix = ".vhs"; versionNameSuffix = "-vhs"
             buildConfigField("boolean", "FULL", "false"); buildConfigField("boolean", "VHS_ONLY", "true")
-            buildConfigField("boolean", "NOTIF", "false")
+            buildConfigField("boolean", "NOTIF", "false"); buildConfigField("boolean", "PLAY", "false")
         }
         // vhsnotif: the same launcher plus the notification area in the title bars. It needs notification
         // access (a notification listener), which can make Play Protect warn about sideloaded apps, so it is a
@@ -71,7 +71,17 @@ android {
         create("vhsnotif") {
             dimension = "dist"; applicationIdSuffix = ".vhs.notif"; versionNameSuffix = "-vhs-notif"
             buildConfigField("boolean", "FULL", "false"); buildConfigField("boolean", "VHS_ONLY", "true")
-            buildConfigField("boolean", "NOTIF", "true")
+            buildConfigField("boolean", "NOTIF", "true"); buildConfigField("boolean", "PLAY", "false")
+        }
+        // play: the Google Play edition (VHS+ based). Its own app id; targets the API level Play requires; no
+        // YouTube stream extraction (YouTube's own player instead), no ROM search (your own game files and free
+        // homebrew), archive.org limited to free content, emulator cores shipped as native libraries (nothing
+        // executable is downloaded), a disclosure before notification access. Built as an app bundle (.aab).
+        create("play") {
+            dimension = "dist"; applicationId = "com.reverender.vhslauncher"; versionNameSuffix = "-play"
+            targetSdk = 36
+            buildConfigField("boolean", "FULL", "false"); buildConfigField("boolean", "VHS_ONLY", "true")
+            buildConfigField("boolean", "NOTIF", "true"); buildConfigField("boolean", "PLAY", "true")
         }
     }
     sourceSets {
@@ -92,6 +102,9 @@ androidComponents {
     onVariants(selector().all()) { v ->
         v.packaging.jniLibs.excludes.addAll(listOf("**/libquickjs.so")) // (the VHS GAME DECK uses libretrodroid)
         v.androidResources.ignoreAssetsPatterns.addAll(listOf("NotoColorEmojiCompat.ttf", "<dir>revy"))
+        // play: the emulator cores are native libraries (src/play/jniLibs), unpacked on install so they load from
+        // the app's own library folder
+        if (v.productFlavors.any { it.second == "play" }) v.packaging.jniLibs.useLegacyPackaging.set(true)
     }
 }
 
