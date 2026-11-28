@@ -51,11 +51,11 @@ Pay once and it's yours. No subscriptions, no ads, no in-app purchases, no accou
 
 ▶ VHS CHAT AND NOTIFICATIONS (OPTIONAL)
 • A notification counter in the title bar that flashes the app name of anything new
-• Read and reply to chat messages on one retro screen
+• Messages from all your apps (chat, SMS, email) on one retro screen, and reply right there
 • Only if you allow notification access. Everything stays on your phone.
 
 ▶ HELP BUILT IN
-• A guided help tour on first start (hold SKIP to skip it), available again from SETUP
+• A step-by-step help tour on first start, with real screens and an animated finger showing every tap, hold and swipe (hold SKIP to skip it; SETUP > TOUR shows it again)
 
 PRIVACY FIRST
 No ads, no tracking, no account, no analytics. Notifications you allow it to read stay on your phone and are never sent anywhere.

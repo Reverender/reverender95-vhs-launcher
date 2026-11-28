@@ -135,7 +135,7 @@ private fun TourShot(p: TourPage, modifier: Modifier) {
             if (before == null && after == null) drawRect(o.fg.copy(alpha = 0.1f))
             // the finger, in the screenshot's own coordinates
             fun at(x: Int, y: Int) = Offset(x / 1000f * size.width, ((y / 1000f) - SHOT_TOP) / (SHOT_BOTTOM - SHOT_TOP) * size.height)
-            val r = size.width * 0.055f
+            val r = size.width * 0.065f
             val show = when { t < 0.3f -> t / 0.3f; t < 1.7f -> 1f; t < 2.0f -> 1f - (t - 1.7f) / 0.3f; else -> 0f }
             fun finger(c: Offset, pressed: Boolean) {
                 drawCircle(Color.Black.copy(alpha = 0.35f * show), r * 1.15f, c + Offset(r * 0.12f, r * 0.12f))
