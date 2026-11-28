@@ -408,6 +408,8 @@ internal fun VhsVideo(d: VideoDeck, onExit: () -> Unit, onSwitch: (String) -> Un
     }
     androidx.activity.compose.BackHandler(enabled = subsOpen) { subsOpen = false }
     fun playYoutube(id: String, t: String) {
+        // Play edition: YouTube's own player in a VHS frame (no stream extraction)
+        if (com.reverender.r95.BuildConfig.PLAY) { exo.pause(); com.reverender.r95.ui.vhs.VhsYt.open(id, t); return }
         startTape(t, null)
         scope.launch {
             try {

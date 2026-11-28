@@ -126,7 +126,7 @@ object ArchiveMp3Search {
     private val searchCache = HashMap<String, Pair<Long, List<JSONObject>>>()
     private suspend fun page(q: String, page: Int): Pair<List<JSONObject>, Int> = withContext(Dispatchers.IO) {
         val fl = listOf("identifier", "title", "creator", "mediatype", "collection", "description", "subject").joinToString("") { "&fl[]=$it" }
-        val body = httpJson("https://archive.org/advancedsearch.php?q=${enc(q)}&rows=100&page=$page&output=json$fl") ?: throw RuntimeException("Internet Archive search failed.")
+        val body = httpJson("https://archive.org/advancedsearch.php?q=${enc(ArchiveFree.q(q))}&rows=100&page=$page&output=json$fl") ?: throw RuntimeException("Internet Archive search failed.")
         val resp = JSONObject(body).optJSONObject("response") ?: JSONObject()
         val docs = resp.optJSONArray("docs") ?: JSONArray()
         List(docs.length()) { docs.getJSONObject(it) } to resp.optInt("numFound")

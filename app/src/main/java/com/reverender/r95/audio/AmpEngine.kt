@@ -116,6 +116,9 @@ object AmpEngine : PlayerConnection.Events {
         isPlaying = true
     }
 
+    /** the music deck goes quiet (YouTube's own player is about to play) */
+    fun pauseIfPlaying() { if (isPlaying && activeSourceMode != "mic" && activeSourceMode != "system") togglePlayPause() }
+
     fun togglePlayPause() {
         if (activeSourceMode == "mic" || activeSourceMode == "system") { stopLiveCapture(); return }
         if (!isPlaying) {
@@ -280,6 +283,12 @@ object AmpEngine : PlayerConnection.Events {
         activeSourceMode = "files"
         isPlaying = true
         filePlaying = a
+        if (a.url.startsWith("yt:") && com.reverender.r95.BuildConfig.PLAY) {
+            // Play edition: YouTube songs play in YouTube's own player, not on the deck
+            isPlaying = false
+            com.reverender.r95.ui.vhs.VhsYt.open(a.url.removePrefix("yt:"), a.name)
+            return
+        }
         if (a.url.startsWith("yt:")) {
             // a YouTube song from the music finder: get today's stream address, then play the sound only
             set("lcd-status", "LOADING…")

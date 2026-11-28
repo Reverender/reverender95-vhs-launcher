@@ -1105,6 +1105,10 @@ fun VhsShell(onShutDown: () -> Unit) {
         }
       }
       if (switchP.floatValue < 1f) VhsSwitchFx({ switchP.floatValue })
+      // Play edition: YouTube's own player, over everything but the CRT glass
+      if (com.reverender.r95.BuildConfig.PLAY) CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsYtEmbedHost() }
+      // the help tour: on first boot, and from SETUP > TOUR
+      CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsTourHost(); if (com.reverender.r95.BuildConfig.PLAY) VhsNotifDisclosureHost() }
       if (crt) CompositionLocalProvider(LocalOsd provides Osd(fg, bg, with(LocalDensity.current) { 2.5.dp.toPx() })) { VhsCrt(clock, g, sched, track) }
       // full-screen video sits above everything: edge to edge, no CRT
       if (screen == Screen.VIDEO && deck.mode == "video" && deck.fullscreen && deck.loaded)
@@ -1882,7 +1886,7 @@ private class CrtStyle(val name: String, vararg val v: Float) {
 //                                    SNOW  GLTCH SCAN  LINES CURVE BGBLR UIBLR CHROMA
 private val CRT_STYLES = listOf(
     CrtStyle("OFF",             0f,   0f,   0f,   0f,   0f,   0f,   0f,   0f),
-    CrtStyle("TRINITRON",       0f,   0f,   0.30f, 0.10f, 0.05f, 0.10f, 0f,   0.05f), // flat, crisp, a 90s living-room set
+    CrtStyle("FLAT TUBE",       0f,   0f,   0.30f, 0.10f, 0.05f, 0.10f, 0f,   0.05f), // flat, crisp, a 90s living-room set
     CrtStyle("STUDIO MONITOR",  0.05f, 0f,  0.45f, 0.15f, 0.15f, 0.15f, 0f,   0.10f), // clean broadcast picture
     CrtStyle("CABLE TV",        0.15f, 0.15f, 0.60f, 0.40f, 0.30f, 0.30f, 0.05f, 0.30f),
     CrtStyle("RENTAL TAPE",     0.45f, 0.55f, 0.70f, 0.65f, 0.30f, 0.35f, 0.15f, 0.45f), // a well-worn video store tape
@@ -1921,7 +1925,7 @@ private fun cycle(list: List<Pair<String, Long>>, cur: Long): Long {
 private fun targetName(t: String): String = when {
     t.isEmpty() -> "---"
     t == "vhs:setup" -> "SETUP"
-    t == "vhs:chat" -> "WHATSAPP"
+    t == "vhs:chat" -> if (com.reverender.r95.BuildConfig.PLAY) "VHS CHAT" else "WHATSAPP"
     t == "vhs:eq" -> "EQ"
     t == "vhs:playlist" -> "PLAYLIST"
     t == "vhs:load" -> "LOAD"
@@ -1970,6 +1974,8 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         },
         // the help bars: always there, or sliding away after 2 s (swipe up from the bottom edge to bring them back)
         "HELP  " + (if (OsPrefs.vhsHelpAuto) "AUTO HIDE" else "FIXED") to { OsPrefs.setVhsHelpAuto(!OsPrefs.vhsHelpAuto) },
+        // the help tour from first boot, again
+        "TOUR  SHOW" to { VhsTour.open = true },
         // the CRT look: set with the SNOW / GLITCH / LINES / CURVE sliders under this row; tapping it switches
         // the first three all off, or back to their defaults
         // CRT: TV / reception styles, each a setting of every slider below (except DIM); moving a slider = CUSTOM
@@ -2005,7 +2011,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "PIN APPS" to { onChoose("pin") },
     ) + (if (!com.reverender.r95.BuildConfig.NOTIF) emptyList() else listOf(
         // VHS+ APK: the notification area needs notification access (tap to open the phone's setting)
-        ("NOTIFS " + if (VhsNotifs.connected) "ON" else "GRANT ACCESS") to { com.reverender.r95.os.RetroAlerts.openListenerSettings(ctx) },
+        ("NOTIFS " + if (VhsNotifs.connected) "ON" else "GRANT ACCESS") to { if (com.reverender.r95.BuildConfig.PLAY && !VhsNotifs.connected) VhsNotifDisclosure.open = true else com.reverender.r95.os.RetroAlerts.openListenerSettings(ctx) },
     )) + listOf(
         "HOME LAUNCHER" to { Launcher.setHomeMode(ctx, true) },
     ) + (if (com.reverender.r95.BuildConfig.VHS_ONLY) emptyList() else listOf(

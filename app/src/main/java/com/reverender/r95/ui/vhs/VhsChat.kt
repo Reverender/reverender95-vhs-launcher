@@ -241,9 +241,9 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
     val ctx = LocalContext.current
     val o = LocalOsd.current
     val chats = VhsChats.chats
-    VhsHeader("WHATSAPP", if (!VhsNotifs.connected) "NO NOTIFS ACCESS" else "${chats.size} CHAT" + if (chats.size == 1) "" else "S")
+    VhsHeader(if (com.reverender.r95.BuildConfig.PLAY) "VHS CHAT" else "WHATSAPP", if (!VhsNotifs.connected) "NO NOTIFS ACCESS" else "${chats.size} CHAT" + if (chats.size == 1) "" else "S")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2.5f)), verticalAlignment = Alignment.CenterVertically) {
-        VhsKey("OPEN WHATSAPP", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, null) }
+        VhsKey(if (com.reverender.r95.BuildConfig.PLAY) "OPEN CHAT APP" else "OPEN WHATSAPP", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, null) }
     }
     Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
         if (!VhsNotifs.connected) {
@@ -251,7 +251,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
         }
         if (chats.isEmpty()) {
             VhsText("NO MESSAGES YET", color = o.fg.copy(alpha = 0.7f))
-            VhsText("NEW WHATSAPP MESSAGES", color = o.fg.copy(alpha = 0.7f))
+            VhsText(if (com.reverender.r95.BuildConfig.PLAY) "NEW CHAT MESSAGES" else "NEW WHATSAPP MESSAGES", color = o.fg.copy(alpha = 0.7f))
             VhsText("COME IN HERE", color = o.fg.copy(alpha = 0.7f))
         }
         for (c in chats) {
@@ -308,7 +308,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
     }
     RegisterKb(VhsKb({ draft }, { draft = it.take(600) }, raw = true) { send() })
     LaunchedEffect(c.msgs.size) { VhsChats.seen(ctx, c.key) }
-    VhsHeader(vhsSafe(c.name).trim().take(20), if (VhsChats.canReply(c.key)) "WHATSAPP  REPLY ON" else "WHATSAPP  READ ONLY")
+    VhsHeader(vhsSafe(c.name).trim().take(20), if (VhsChats.canReply(c.key)) "CHAT  REPLY ON" else "CHAT  READ ONLY")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2.5f)), verticalAlignment = Alignment.CenterVertically) {
         VhsKey("◀CHATS", boxed = true) { Haptics.tick(); VhsChats.open = null }
         VhsKey("OPEN", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, c.key) }

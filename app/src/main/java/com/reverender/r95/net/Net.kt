@@ -110,10 +110,23 @@ object RadioBrowser {
 data class ArchiveItem(val id: String, val title: String, val creator: String)
 data class ArchiveFile(val name: String, val size: Long, val format: String)
 
+/**
+ * Google Play edition: archive.org searches only find free content — items under a Creative Commons or
+ * public-domain licence, or in the archive's public-domain collections. (Looking up collections by name is
+ * left as it is; the items found in them are filtered.)
+ */
+object ArchiveFree {
+    private const val FREE = "(licenseurl:*creativecommons.org* OR licenseurl:*publicdomain* OR " +
+        "collection:(prelinger OR feature_films OR classic_tv OR classic_cartoons OR silent_films OR " +
+        "publicdomainmovies OR pd_films OR netlabels OR oldtimeradio OR audio_bookspoetry OR librivoxaudio))"
+    fun q(q: String): String =
+        if (!com.reverender.r95.BuildConfig.PLAY || q.trimStart().startsWith("mediatype:collection")) q else "($q) AND $FREE"
+}
+
 /** archive.org search + file listing. Native apps have no CORS limits, so no relay is needed. */
 object ArchiveClient {
     suspend fun search(query: String, mediatype: String, rows: Int = 50): List<ArchiveItem> = withContext(Dispatchers.IO) {
-        val q = "($mediatype) AND (${query.trim()})"
+        val q = ArchiveFree.q("($mediatype) AND (${query.trim()})")
         val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(q, "UTF-8") +
             "&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=creator&rows=$rows&page=1&output=json"
         val conn = open(url, 20_000)
@@ -308,7 +321,7 @@ object ArchiveVideoSearch {
     /** _e(q, 1): one page of 100 docs (cached 10 min) */
     private fun docs(q: String): List<JSONObject> {
         synchronized(cache) { cache[q]?.let { if (System.currentTimeMillis() - it.first < 600_000) return it.second } }
-        val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(q, "UTF-8") + "&rows=100&page=1&output=json" +
+        val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(ArchiveFree.q(q), "UTF-8") + "&rows=100&page=1&output=json" +
             listOf("identifier", "title", "mediatype", "collection", "description", "subject").joinToString("") { "&fl%5B%5D=$it" }
         val conn = open(url, 25_000)
         val code = conn.responseCode
@@ -506,7 +519,7 @@ object ArchiveRomSearch {
     }
     /** Ge(): one page */
     private fun page(q: String, p: Int): Pair<List<JSONObject>, Int> {
-        val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(q, "UTF-8") + "&rows=100&page=$p&output=json" +
+        val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(ArchiveFree.q(q), "UTF-8") + "&rows=100&page=$p&output=json" +
             listOf("identifier", "title", "mediatype", "collection", "description").joinToString("") { "&fl%5B%5D=$it" }
         val conn = open(url, 25_000)
         val code = conn.responseCode

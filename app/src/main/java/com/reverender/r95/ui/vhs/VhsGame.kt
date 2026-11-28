@@ -102,6 +102,7 @@ internal fun VhsGame(onExit: () -> Unit, onSwitch: (String) -> Unit = {}) {
         }
     }
     fun search() {
+        if (com.reverender.r95.BuildConfig.PLAY) return  // no ROM search in the Google Play edition
         val t = com.reverender.r95.net.ArchiveRomSearch.parse(query)
         if (t.original.length < 2 || t.tokens.isEmpty()) { msg = "TYPE AT LEAST 2 LETTERS"; return }
         job?.cancel(); hits.clear(); Haptics.tick()
@@ -200,10 +201,31 @@ internal fun VhsGame(onExit: () -> Unit, onSwitch: (String) -> Unit = {}) {
             VhsHeader("GAME DECK", if (g != null) "NEW CARTRIDGE?" else "INSERT CARTRIDGE")
             VhsDeckSwitch("game") { m -> leave { onSwitch(m) } }
             Row(horizontalArrangement = Arrangement.spacedBy(pxDp(3f)), verticalAlignment = Alignment.CenterVertically) {
-                VhsKey("ARCHIVE", selected = true) { }
+                VhsKey(if (com.reverender.r95.BuildConfig.PLAY) "FREE" else "ARCHIVE", selected = true) { }
                 VhsKey("FILE", boxed = true) { picker.launch(arrayOf("*/*")) }
                 if (g != null) VhsKey("◀GAME", boxed = true) { searching = false }
             }
+            if (com.reverender.r95.BuildConfig.PLAY) {
+                // Play edition: your own game files (FILE), and free homebrew from the makers' own pages
+                VhsText("LOAD YOUR OWN GAME: FILE", color = o.fg.copy(alpha = 0.7f))
+                VhsText("FREE HOMEBREW GAMES:", color = o.fg.copy(alpha = 0.6f))
+                Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
+                    msg?.takeIf { it != "TYPE A GAME TITLE" }?.let { VhsText(it.take(22), color = o.fg.copy(alpha = 0.7f)) }
+                    HOMEBREW.forEachIndexed { i, h ->
+                        Column(Modifier.fillMaxWidth().pointerInput(h.page) { detectTapGestures {
+                            Haptics.tick()
+                            runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(h.page)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        } }) {
+                            VhsText("%02d ".format(i + 1) + h.title.take(19))
+                            VhsText("   " + h.system + "  MAKER'S PAGE", color = o.fg.copy(alpha = 0.6f))
+                        }
+                    }
+                    VhsText("DOWNLOAD IT, THEN FILE", color = o.fg.copy(alpha = 0.5f))
+                }
+                Box(Modifier.vhsAutoHide().fillMaxWidth().background(o.fg).padding(pxDp(1f)).pointerInput(Unit) { detectTapGestures { Haptics.tick(); leave(onExit) } }) {
+                    VhsText("TAP HERE TO RETURN", invert = true)
+                }
+            } else {
             RegisterKb(VhsKb({ query }, { query = it.take(30) }, label = "FIND A GAME") { search() })
             Box(Modifier.fillMaxWidth().pointerInput(Unit) { detectTapGestures { openKb() } }) {
                 VhsText("FIND:" + query.takeLast(16) + if (blink) "_" else " ")
@@ -225,10 +247,23 @@ internal fun VhsGame(onExit: () -> Unit, onSwitch: (String) -> Unit = {}) {
                     VhsText("TAP HERE TO RETURN", invert = true)
                 }
             }
+            }
     }
     }
     }
 }
+
+/**
+ * Google Play edition: no ROM search. Free homebrew games whose makers give them away; a tap opens the
+ * maker's own download page, then the downloaded file goes in with FILE.
+ */
+private class Homebrew(val title: String, val system: String, val page: String)
+private val HOMEBREW = listOf(
+    Homebrew("TOBU TOBU GIRL DX", "GB/GBC", "https://tangramgames.itch.io/tobu-tobu-girl-deluxe"),
+    Homebrew("TOBU TOBU GIRL", "GB", "https://tangramgames.itch.io/tobutobugirl"),
+    Homebrew("MICRO CITY", "GBC", "https://github.com/AntonioND/ucity/releases"),
+    Homebrew("MICRO CITY ADVANCE", "GBA", "https://skylyrac.itch.io/ucity-advance"),
+)
 
 /** One pad button: a RetroPad key, or a right-stick direction (the N64 C buttons). */
 private class VPad(val id: String, val label: String, val code: Int = 0, val axis: Pair<Float, Float>? = null)

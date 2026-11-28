@@ -60,6 +60,7 @@ object OsPrefs {
         vhsChroma = p.getFloat("vhs_chroma", 0.35f); vhsTrack = p.getFloat("vhs_track", 0.5f)
         vhsCurve = p.getFloat("vhs_curve_amt", 0.3f)
         vhsGrad = p.getInt("vhs_grad", -1); vhsFgMix = p.getBoolean("vhs_fg_mix", false); vhsHelpAuto = p.getBoolean("vhs_help_auto", false)
+        vhsTourDone = p.getBoolean("vhs_tour_done", false)
         vhsSwipe = listOf("up", "down", "left", "right").associateWith { p.getString("vhs_swipe_$it", "") ?: "" }
     }
 
@@ -218,6 +219,9 @@ object OsPrefs {
     /** VHS help bars: false = always shown, true = slide away after 2 s (swipe up from the bottom brings them back) */
     @set:JvmName("vhsHelpAutoInternal") var vhsHelpAuto by mutableStateOf(false); private set
     fun setVhsHelpAuto(v: Boolean) { vhsHelpAuto = v; put { putBoolean("vhs_help_auto", v) } }
+    /** the first-boot help tour has been finished or skipped (SETUP > TOUR shows it again) */
+    @set:JvmName("vhsTourDoneInternal") var vhsTourDone by mutableStateOf(true); private set
+    fun setVhsTourDone(v: Boolean) { vhsTourDone = v; put { putBoolean("vhs_tour_done", v) } }
     /** VHS CRT: analog snow, specks and tape drop-outs (0 … 1) */
     @set:JvmName("vhsSnowInternal") var vhsSnow by mutableStateOf(0.5f); private set
     fun setVhsSnow(v: Float) { vhsSnow = v.coerceIn(0f, 1f); put { putFloat("vhs_snow", vhsSnow) } }

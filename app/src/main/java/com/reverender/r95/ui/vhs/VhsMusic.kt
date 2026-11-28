@@ -113,9 +113,14 @@ internal fun VhsMusic(onExit: () -> Unit, onSwitch: (String) -> Unit, onPlayed: 
                 val added = h.url in inList
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2f)), verticalAlignment = Alignment.CenterVertically) {
                     // + : into the playlist only
-                    VhsKey(if (added) "✓" else "+", selected = added, boxed = true) { if (!added) { Haptics.tick(); f.add(h, play = false) } }
+                    // (Play edition: YouTube songs play in YouTube's own player, so they don't go in the playlist)
+                    val ytOnly = com.reverender.r95.BuildConfig.PLAY && h.url.startsWith("yt:")
+                    if (!ytOnly) VhsKey(if (added) "✓" else "+", selected = added, boxed = true) { if (!added) { Haptics.tick(); f.add(h, play = false) } }
                     // the song: play it now on the home screen player
-                    Column(Modifier.weight(1f).pointerInput(h) { detectTapGestures { Haptics.clunk("play"); f.add(h, play = true); onPlayed() } }) {
+                    Column(Modifier.weight(1f).pointerInput(h) { detectTapGestures {
+                        Haptics.clunk("play")
+                        if (ytOnly) com.reverender.r95.ui.vhs.VhsYt.open(h.url.removePrefix("yt:"), h.title) else { f.add(h, play = true); onPlayed() }
+                    } }) {
                         VhsText(vhsSafe(h.title).uppercase().take(19))
                         VhsText(vhsSafe(h.sub).uppercase().take(19), color = o.fg.copy(alpha = 0.6f))
                     }

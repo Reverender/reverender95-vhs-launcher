@@ -47,6 +47,8 @@ object YtStreams {
     private fun init() { if (!ready) synchronized(this) { if (!ready) { NewPipe.init(HttpDownloader); ready = true } } }
 
     suspend fun resolve(videoId: String): Playable = withContext(Dispatchers.IO) {
+        // the Google Play edition never pulls streams out of YouTube (YouTube's own player is used instead)
+        if (com.reverender.r95.BuildConfig.PLAY) throw IllegalStateException("not in this edition")
         init()
         val info = StreamInfo.getInfo(ServiceList.YouTube, "https://www.youtube.com/watch?v=$videoId")
         if (info.hlsUrl.isNullOrEmpty().not() && info.videoStreams.isEmpty() && info.videoOnlyStreams.isEmpty()) return@withContext Playable(info.name, info.hlsUrl, null, true)
