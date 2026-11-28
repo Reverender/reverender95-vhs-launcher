@@ -21,6 +21,8 @@ start() { timeout 20 adb shell am force-stop $P; timeout 20 adb shell am start -
 rec() { adb shell rm -f /sdcard/$1.mp4; adb shell screenrecord --size 1080x1920 --bit-rate 12000000 --time-limit $2 /sdcard/$1.mp4 & RECPID=$!; }
 recdone() { wait $RECPID 2>/dev/null; sleep 1; adb pull /sdcard/$1.mp4 "$OUT/$1.mp4" >/dev/null 2>&1; echo "video $1"; }
 
+# ONLY=tail: just the VHS WEB and LOAD parts
+if [ "${ONLY:-}" != "tail" ]; then
 # 0) first boot: the help tour
 start; sleep 14
 cap 00-tour-1
@@ -81,8 +83,9 @@ adb shell input tap $((W/3)) $((H*155/1000)); sleep 3
 cap 32-chat-open
 recdone v5-chat
 
+fi
 # 4) VHS WEB
-start --ei r95_vhs_tour 0 --ei r95_vhs_wall 3 --es r95_vhs_swipe_right vhs:web --es r95_vhs_webhome https://reverender.com/; sleep 10
+start --ei r95_vhs_tour 0 --ei r95_vhs_wall 3 --es r95_vhs_swipe_right vhs:web --es r95_vhs_webhome https://en.m.wikipedia.org/wiki/Videocassette_recorder; sleep 10
 rec v6-web 9
 adb shell input swipe $((W*15/100)) $((H*35/100)) $((W*85/100)) $((H*35/100)) 250; sleep 7
 cap 40-web

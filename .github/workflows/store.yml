@@ -4,6 +4,11 @@ name: Store material
 # Run it from the Actions tab; the results land on the ui-results branch (store/).
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "tail = only the VHS WEB and LOAD parts"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -42,7 +47,7 @@ jobs:
           disable-animations: false
           disk-size: 4096M
           ram-size: 3072M
-          script: timeout 35m bash .github/scripts/store.sh 2>&1 | tee /tmp/store-report.txt; mkdir -p store; cp /tmp/store-report.txt store/report.txt
+          script: ONLY="${{ inputs.only }}" timeout 35m bash .github/scripts/store.sh 2>&1 | tee /tmp/store-report.txt; mkdir -p store; cp /tmp/store-report.txt store/report.txt
       - name: Publish to the ui-results branch
         if: always()
         run: |
