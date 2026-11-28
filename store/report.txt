@@ -1,4 +1,5 @@
 shot 00-tour-1
+shot 00-tour-2
 video v0-tour
 shot 00-tour-after
 shot 01-home
@@ -26,43 +27,17 @@ shot 32-chat-open
 video v5-chat
 shot 40-web
 video v6-web
+adb: device 'emulator-5554' not found
+adb: device 'emulator-5554' not found
+adb: device 'emulator-5554' not found
+adb: device 'emulator-5554' not found
+adb: device 'emulator-5554' not found
+error: device 'emulator-5554' not found
 shot 50-load
+adb: device 'emulator-5554' not found
+error: device 'emulator-5554' not found
 shot 51-load-deck
 video v7-load
-pid: 7624
-11-28 01:19:31.947   954   954 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
-total 61492
-drwxr-xr-x  2 runner runner    4096 Nov 28 01:25 .
-drwxr-xr-x 12 runner runner    4096 Nov 28 01:19 ..
--rw-r--r--  1 runner runner 3081412 Nov 28 01:20 00-tour-1.png
--rw-r--r--  1 runner runner 3107263 Nov 28 01:20 00-tour-after.png
--rw-r--r--  1 runner runner 1941429 Nov 28 01:20 01-home.png
--rw-r--r--  1 runner runner 1609122 Nov 28 01:21 02-drawer.png
--rw-r--r--  1 runner runner 1790467 Nov 28 01:21 03-setup.png
--rw-r--r--  1 runner runner 1789950 Nov 28 01:21 03b-setup-scrolled.png
--rw-r--r--  1 runner runner 3166232 Nov 28 01:21 10-look-w1.png
--rw-r--r--  1 runner runner 3289852 Nov 28 01:22 11-look-w2.png
--rw-r--r--  1 runner runner 4230303 Nov 28 01:22 12-look-w3.png
--rw-r--r--  1 runner runner 3079381 Nov 28 01:22 13-look-w4.png
--rw-r--r--  1 runner runner 3424325 Nov 28 01:23 14-look-w5.png
--rw-r--r--  1 runner runner 3681777 Nov 28 01:23 20-drawer-teletext.png
--rw-r--r--  1 runner runner 3541195 Nov 28 01:23 21-drawer-grid.png
--rw-r--r--  1 runner runner 3582056 Nov 28 01:24 30-home-notifs.png
--rw-r--r--  1 runner runner 3311545 Nov 28 01:24 31-chat.png
--rw-r--r--  1 runner runner 3495336 Nov 28 01:24 32-chat-open.png
--rw-r--r--  1 runner runner 2487395 Nov 28 01:24 40-web.png
--rw-r--r--  1 runner runner   66117 Nov 28 01:25 50-load.png
--rw-r--r--  1 runner runner   75823 Nov 28 01:25 51-load-deck.png
--rw-r--r--  1 runner runner      36 Nov 28 01:19 install.txt
--rw-r--r--  1 runner runner 1194619 Nov 28 01:20 v0-tour.mp4
--rw-r--r--  1 runner runner  989538 Nov 28 01:21 v1-home.mp4
--rw-r--r--  1 runner runner  845367 Nov 28 01:21 v2-drawer.mp4
--rw-r--r--  1 runner runner  966705 Nov 28 01:21 v3-setup.mp4
--rw-r--r--  1 runner runner 1232759 Nov 28 01:21 v4-look0.mp4
--rw-r--r--  1 runner runner  866414 Nov 28 01:22 v4-look1.mp4
--rw-r--r--  1 runner runner 1010430 Nov 28 01:22 v4-look2.mp4
--rw-r--r--  1 runner runner  892522 Nov 28 01:22 v4-look3.mp4
--rw-r--r--  1 runner runner  802451 Nov 28 01:23 v4-look4.mp4
--rw-r--r--  1 runner runner 1077826 Nov 28 01:24 v5-chat.mp4
--rw-r--r--  1 runner runner  962793 Nov 28 01:24 v6-web.mp4
--rw-r--r--  1 runner runner 1299494 Nov 28 01:25 v7-load.mp4
+adb: device 'emulator-5554' not found
+pid: 
+- waiting for device -
