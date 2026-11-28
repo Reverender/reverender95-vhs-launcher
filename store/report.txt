@@ -2,6 +2,7 @@ shot t01-home
 shot t02-drawer
 shot t03-drawer-hold
 shot t04-kb
+shot t04b-radio
 shot t05-shade
 shot t06-setup
 shot t07-setup-crt
@@ -16,30 +17,31 @@ shot t15-music
 shot t16-chat
 shot t17-chat-open
 shot t18-web
-pid: 6831
-11-28 08:56:18.655   336   336 D AndroidRuntime: >>>>>> START com.android.internal.os.ZygoteInit uid 0 <<<<<<
-11-28 08:56:18.661   336   336 I AndroidRuntime: Using default boot image
-11-28 08:56:18.661   336   336 I AndroidRuntime: Leaving lock profiling enabled
-11-28 08:56:35.222   961   961 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
-total 11620
-drwxr-xr-x  2 runner runner    4096 Nov 28 09:00 .
-drwxr-xr-x 12 runner runner    4096 Nov 28 08:56 ..
--rw-r--r--  1 runner runner      36 Nov 28 08:56 install.txt
--rw-r--r--  1 runner runner  786052 Nov 28 08:57 t01-home.png
--rw-r--r--  1 runner runner  562239 Nov 28 08:57 t02-drawer.png
--rw-r--r--  1 runner runner  439941 Nov 28 08:57 t03-drawer-hold.png
--rw-r--r--  1 runner runner  803786 Nov 28 08:57 t04-kb.png
--rw-r--r--  1 runner runner  120511 Nov 28 08:57 t05-shade.png
--rw-r--r--  1 runner runner  938167 Nov 28 08:58 t06-setup.png
--rw-r--r--  1 runner runner 1801270 Nov 28 08:58 t07-setup-crt.png
--rw-r--r--  1 runner runner   94285 Nov 28 08:58 t08-clock.png
--rw-r--r--  1 runner runner  756125 Nov 28 08:58 t09-station.png
--rw-r--r--  1 runner runner  798287 Nov 28 08:58 t10-playing.png
--rw-r--r--  1 runner runner  795621 Nov 28 08:59 t11-eq.png
--rw-r--r--  1 runner runner  768387 Nov 28 08:59 t12-playlist.png
--rw-r--r--  1 runner runner  824753 Nov 28 08:59 t13-load.png
--rw-r--r--  1 runner runner  409528 Nov 28 08:59 t14-games.png
--rw-r--r--  1 runner runner  389897 Nov 28 08:59 t15-music.png
--rw-r--r--  1 runner runner  600431 Nov 28 09:00 t16-chat.png
--rw-r--r--  1 runner runner  616698 Nov 28 09:00 t17-chat-open.png
--rw-r--r--  1 runner runner  343912 Nov 28 09:00 t18-web.png
+pid: 7077
+11-28 09:09:18.176   337   337 D AndroidRuntime: >>>>>> START com.android.internal.os.ZygoteInit uid 0 <<<<<<
+11-28 09:09:18.181   337   337 I AndroidRuntime: Using default boot image
+11-28 09:09:18.181   337   337 I AndroidRuntime: Leaving lock profiling enabled
+11-28 09:09:39.623   960   960 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+total 12364
+drwxr-xr-x  2 runner runner    4096 Nov 28 09:14 .
+drwxr-xr-x 12 runner runner    4096 Nov 28 09:09 ..
+-rw-r--r--  1 runner runner      36 Nov 28 09:09 install.txt
+-rw-r--r--  1 runner runner  803931 Nov 28 09:10 t01-home.png
+-rw-r--r--  1 runner runner  533906 Nov 28 09:10 t02-drawer.png
+-rw-r--r--  1 runner runner  447420 Nov 28 09:10 t03-drawer-hold.png
+-rw-r--r--  1 runner runner  365911 Nov 28 09:10 t04-kb.png
+-rw-r--r--  1 runner runner  865216 Nov 28 09:11 t04b-radio.png
+-rw-r--r--  1 runner runner  120895 Nov 28 09:11 t05-shade.png
+-rw-r--r--  1 runner runner  903609 Nov 28 09:11 t06-setup.png
+-rw-r--r--  1 runner runner 1810004 Nov 28 09:11 t07-setup-crt.png
+-rw-r--r--  1 runner runner   90222 Nov 28 09:12 t08-clock.png
+-rw-r--r--  1 runner runner  706416 Nov 28 09:12 t09-station.png
+-rw-r--r--  1 runner runner  818895 Nov 28 09:12 t10-playing.png
+-rw-r--r--  1 runner runner  829246 Nov 28 09:12 t11-eq.png
+-rw-r--r--  1 runner runner  569349 Nov 28 09:13 t12-playlist.png
+-rw-r--r--  1 runner runner  610563 Nov 28 09:13 t13-load.png
+-rw-r--r--  1 runner runner  990381 Nov 28 09:13 t14-games.png
+-rw-r--r--  1 runner runner  560756 Nov 28 09:13 t15-music.png
+-rw-r--r--  1 runner runner  595581 Nov 28 09:14 t16-chat.png
+-rw-r--r--  1 runner runner  641414 Nov 28 09:14 t17-chat-open.png
+-rw-r--r--  1 runner runner  343963 Nov 28 09:14 t18-web.png
