@@ -24,10 +24,12 @@ recdone() { wait $RECPID 2>/dev/null; sleep 1; adb pull /sdcard/$1.mp4 "$OUT/$1.
 # 0) first boot: the help tour
 start; sleep 14
 cap 00-tour-1
-rec v0-tour 9
-adb shell input tap $((W*86/100)) $((H*94/100)); sleep 2.5
-adb shell input tap $((W*86/100)) $((H*94/100)); sleep 2.5
-adb shell input swipe $((W*15/100)) $((H*94/100)) $((W*15/100)) $((H*94/100)) 1800; sleep 2
+rec v0-tour 12
+adb shell input tap $((W*86/100)) $((H*90/100)); sleep 2.5
+cap 00-tour-2
+adb shell input tap $((W*86/100)) $((H*90/100)); sleep 2.5
+# SKIP has to be held: try a few heights along the bottom row
+for y in 90 88 92; do adb shell input swipe $((W*12/100)) $((H*y/100)) $((W*12/100)) $((H*y/100)) 2000; sleep 1.5; done
 recdone v0-tour
 cap 00-tour-after
 
@@ -80,16 +82,16 @@ cap 32-chat-open
 recdone v5-chat
 
 # 4) VHS WEB
-start --ei r95_vhs_tour 0 --ei r95_vhs_wall 3 --es r95_vhs_swipe_right vhs:web; sleep 10
+start --ei r95_vhs_tour 0 --ei r95_vhs_wall 3 --es r95_vhs_swipe_right vhs:web --es r95_vhs_webhome https://reverender.com/; sleep 10
 rec v6-web 9
-adb shell input swipe $((W*15/100)) $((H/2)) $((W*85/100)) $((H/2)) 250; sleep 7
+adb shell input swipe $((W*15/100)) $((H*35/100)) $((W*85/100)) $((H*35/100)) 250; sleep 7
 cap 40-web
 recdone v6-web
 
 # 5) LOAD (tape / game / music decks)
 start --ei r95_vhs_tour 0 --ei r95_vhs_wall 2 --es r95_vhs_swipe_left vhs:load; sleep 10
 rec v7-load 8
-adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 3
+adb shell input swipe $((W*85/100)) $((H*35/100)) $((W*15/100)) $((H*35/100)) 250; sleep 3
 cap 50-load
 adb shell input tap $((W/2)) $((H*20/100)); sleep 3
 cap 51-load-deck

@@ -85,7 +85,8 @@ internal fun VhsTourHost() {
     LaunchedEffect(hint) { if (hint) { delay(1500); hint = false } }
     val p = pages[page]
     Box(Modifier.fillMaxSize().background(o.bg).pointerInput(Unit) { detectTapGestures { } }) {
-        Column(Modifier.fillMaxSize().padding(pxDp(3f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
+        // (the bottom row sits well clear of the CRT's curved corners, and the keys are big enough for a thumb)
+        Column(Modifier.fillMaxSize().padding(start = pxDp(3f), end = pxDp(3f), top = pxDp(3f), bottom = pxDp(9f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
             VhsHeader("HELP TOUR", "%02d/%02d".format(page + 1, pages.size))
             Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f))) { VhsText(p.title, invert = true) }
             Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(pxDp(1.4f))) {
@@ -104,11 +105,11 @@ internal fun VhsTourHost() {
                     }
                 }) {
                     Box(Modifier.matchParentSize()) { Box(Modifier.fillMaxHeight().fillMaxWidth(hold).background(o.fg.copy(alpha = 0.45f))) }
-                    Box(Modifier.padding(pxDp(1f))) { VhsText("HOLD SKIP") }
+                    Box(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(3f))) { VhsText(if (holding) "SKIPPING…" else "HOLD SKIP") }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(pxDp(3f))) {
-                    if (page > 0) VhsKey("◀BACK", boxed = true) { Haptics.tick(); page-- }
-                    VhsKey(if (page == pages.lastIndex) "START" else "NEXT▶", boxed = true, selected = true) {
+                    if (page > 0) VhsKey("◀BACK", boxed = true, scale = 1.3f) { Haptics.tick(); page-- }
+                    VhsKey(if (page == pages.lastIndex) "START" else "NEXT▶", boxed = true, selected = true, scale = 1.3f) {
                         Haptics.tick(); if (page == pages.lastIndex) done() else page++
                     }
                 }
