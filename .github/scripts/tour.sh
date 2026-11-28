@@ -26,33 +26,33 @@ adb shell cmd notification post -S messaging --conversation Sam --message Sam:Ar
 adb shell cmd notification post -S messaging --conversation Band --message Kim:Rehearsal_at_eight --message Joe:Bringing_the_synth chat2 y >/dev/null; sleep 4
 cap t01-home
 # app drawer, hold an app
-swipe 500 700 500 300; cap t02-drawer
-hold 200 370; cap t03-drawer-hold
+swipe 500 420 500 120; cap t02-drawer
+hold 250 340; cap t03-drawer-hold
 back; back
 # search: tap the APPS field
-start; tap 150 180; cap t04-kb
+start; tap 150 133; cap t04-kb
 back; back
 # Android's notification shade
 start; swipe 500 20 500 600; cap t05-shade
 back
 # SETUP from the help bar, and a tap on CRT
 start; tap 500 950; cap t06-setup
-tap 200 190; cap t07-setup-crt
+tap 200 244; cap t07-setup-crt
 back
 # hold the clock
-start; hold 760 580 4; cap t08-clock
+start; hold 760 483 4; cap t08-clock
 # radio: pick a station, press PLAY
-start; tap 600 210; cap t09-station
-tap 90 580 9; cap t10-playing
+start; tap 650 180; cap t09-station
+tap 215 483 9; cap t10-playing
 # EQ and the playlist
-tap 50 760; cap t11-eq
+tap 80 704; cap t11-eq
 back
-start; tap 120 820; cap t12-playlist
+start; tap 200 794; cap t12-playlist
 back
 # LOAD: video, games, music decks
-start; tap 880 180; cap t13-load
-tap 440 150; cap t14-games
-tap 680 150; cap t15-music
+start; tap 880 133; cap t13-load
+tap 460 133; cap t14-games
+back; tap 880 133; tap 700 133; cap t15-music
 back
 # sideways swipes: VHS CHAT one way, VHS WEB the other
 start; swipe 850 400 150 400; cap t16-chat
