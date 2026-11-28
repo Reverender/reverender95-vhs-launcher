@@ -3,6 +3,7 @@
 set -u
 OUT=store; mkdir -p "$OUT"
 [ "${ONLY:-}" = tour ] && exec bash .github/scripts/tour.sh
+[ "${ONLY:-}" = tourcheck ] && exec bash .github/scripts/tourcheck.sh
 P=com.reverender.vhslauncher
 adb shell wm size 1080x1920; adb shell wm density 420; sleep 3
 W=1080; H=1920
