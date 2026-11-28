@@ -30,7 +30,9 @@ swipe 500 420 500 120; cap t02-drawer
 hold 250 340; cap t03-drawer-hold
 back; back
 # search: tap the APPS field
-start; tap 150 133; cap t04-kb
+start; tap 460 133; cap t04-kb
+back; back
+start; tap 150 133; cap t04b-radio
 back; back
 # Android's notification shade
 start; swipe 500 20 500 600; cap t05-shade
@@ -43,16 +45,16 @@ back
 start; hold 760 483 4; cap t08-clock
 # radio: pick a station, press PLAY
 start; tap 650 180; cap t09-station
-tap 215 483 9; cap t10-playing
+hold 200 483 12; cap t10-playing
 # EQ and the playlist
-tap 80 704; cap t11-eq
+hold 80 704; cap t11-eq
 back
-start; tap 200 794; cap t12-playlist
+start; hold 200 794; cap t12-playlist
 back
 # LOAD: video, games, music decks
-start; tap 880 133; cap t13-load
+start; hold 880 133; cap t13-load
 tap 460 133; cap t14-games
-back; tap 880 133; tap 700 133; cap t15-music
+back; start; hold 880 133; tap 700 133; cap t15-music
 back
 # sideways swipes: VHS CHAT one way, VHS WEB the other
 start; swipe 850 400 150 400; cap t16-chat
