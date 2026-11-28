@@ -136,8 +136,7 @@ internal fun VhsNotifDisclosureHost() {
             Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(pxDp(1.2f))) {
                 listOf(
                     "THIS APP CAN READ YOUR", "NOTIFICATIONS, TO:", "- COUNT THEM AND SHOW",
-                    "  THE APP NAME (TOP", "  RIGHT ON HOME)", "- SHOW CHAT MESSAGES", "  AND LET YOU REPLY",
-                    "  IN VHS CHAT", "", "IT STAYS ON THIS PHONE:", "NOTHING IS SENT TO US", "OR ANYONE ELSE, AND",
+                    "  THE APP NAME (TOP", "  RIGHT ON HOME)", "- SHOW MESSAGES FROM", "  YOUR APPS IN VHS CHAT", "  AND LET YOU REPLY", "", "IT STAYS ON THIS PHONE:", "NOTHING IS SENT TO US", "OR ANYONE ELSE, AND",
                     "NOTHING IS STORED", "AFTER THE APP CLOSES.", "TURN IT OFF ANY TIME", "IN ANDROID SETTINGS.",
                 ).forEach { VhsText(it) }
             }

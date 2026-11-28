@@ -50,6 +50,9 @@ internal class Chat(val key: String, name: String) {
     var unread by mutableIntStateOf(0)
     var last by mutableLongStateOf(0L)
     var group by mutableStateOf(false)
+    /** the app the chat comes from (Play edition: every messaging app) and its name */
+    var pkg by mutableStateOf("")
+    var app by mutableStateOf("")
 }
 
 /**
@@ -85,7 +88,7 @@ internal object VhsChats {
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
                 val c = Chat(o.getString("k"), o.getString("n"))
-                c.unread = o.optInt("u"); c.last = o.optLong("l"); c.group = o.optBoolean("g")
+                c.unread = o.optInt("u"); c.last = o.optLong("l"); c.group = o.optBoolean("g"); c.pkg = o.optString("p"); c.app = o.optString("a")
                 val ms = o.getJSONArray("m")
                 for (j in 0 until ms.length()) { val m = ms.getJSONObject(j); c.msgs.add(ChatMsg(if (m.isNull("f")) null else m.getString("f"), m.getString("t"), m.getLong("w"))) }
                 chats.add(c)
@@ -98,23 +101,74 @@ internal object VhsChats {
         for (c in chats.take(40)) {
             val ms = org.json.JSONArray()
             for (m in c.msgs.takeLast(80)) ms.put(org.json.JSONObject().put("f", m.from ?: org.json.JSONObject.NULL).put("t", m.text).put("w", m.time))
-            arr.put(org.json.JSONObject().put("k", c.key).put("n", c.name).put("u", c.unread).put("l", c.last).put("g", c.group).put("m", ms))
+            arr.put(org.json.JSONObject().put("k", c.key).put("n", c.name).put("u", c.unread).put("l", c.last).put("g", c.group).put("p", c.pkg).put("a", c.app).put("m", ms))
         }
         prefs(ctx).edit().putString("chats", arr.toString()).apply()
     }
 
+    /**
+     * Google Play edition: messages from every app. Anything that looks like a message is taken: a chat-style
+     * notification, one with a reply button, or one Android files as a message or an email. Each app's chats
+     * are kept apart (the key starts with the app's package).
+     */
+    private fun playPosted(ctx: Context, s: StatusBarNotification) {
+        if (s.packageName == ctx.packageName || s.isOngoing) return
+        val n = s.notification ?: return
+        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+        val replyBtn = n.actions?.firstOrNull { !it.remoteInputs.isNullOrEmpty() }
+        val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n)
+        val msgCat = n.category == Notification.CATEGORY_MESSAGE || n.category == Notification.CATEGORY_EMAIL
+        if (style == null && replyBtn == null && !msgCat) return
+        load(ctx)
+        val app = runCatching { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(s.packageName, 0)).toString() }.getOrDefault(s.packageName.substringAfterLast('.'))
+        if (style != null) { chatPosted(ctx, s, n, style, s.packageName + "|", app); return }
+        // a plain notification: its title is who it's from, its text the message
+        val title = n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
+        val text = (n.extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: n.extras.getCharSequence(Notification.EXTRA_TEXT))?.toString()?.trim().orEmpty()
+        if (title.isEmpty() || text.isEmpty()) return
+        val key = s.packageName + "|" + ((if (android.os.Build.VERSION.SDK_INT >= 26) n.shortcutId else null) ?: title)
+        val c = chat(key) ?: Chat(key, title).also { chats.add(0, it) }
+        c.pkg = s.packageName; c.app = app
+        val t = if (n.`when` > 0) n.`when` else s.postTime
+        if (c.msgs.none { it.text == text && it.from == title }) {
+            c.msgs.add(ChatMsg(title, text, t))
+            while (c.msgs.size > 80) c.msgs.removeAt(0)
+            c.last = maxOf(c.last, t); if (open != key) c.unread++
+            chats.sortByDescending { it.last }
+        }
+        actions(key, n)
+        replyReady++
+        save(ctx)
+    }
+
+    private fun actions(key: String, n: Notification) {
+        n.actions?.firstOrNull { !it.remoteInputs.isNullOrEmpty() }?.let { reply[key] = it }
+        n.actions?.firstOrNull {
+            (android.os.Build.VERSION.SDK_INT >= 28 && it.semanticAction == Notification.Action.SEMANTIC_ACTION_MARK_AS_READ) ||
+                it.title?.toString()?.lowercase()?.let { t -> "read" in t || "gelezen" in t } == true
+        }?.let { markRead[key] = it }
+        n.contentIntent?.let { tapIntent[key] = it }
+    }
+
     /** a notification came in (or was updated): pick up a WhatsApp chat's messages and its reply button */
     fun onPosted(ctx: Context, s: StatusBarNotification) {
-        if (!BuildConfig.NOTIF || (s.packageName !in PKGS && s.packageName != testPkg)) return
+        if (!BuildConfig.NOTIF) return
+        if (BuildConfig.PLAY && s.packageName != testPkg) { playPosted(ctx, s); return }
+        if (s.packageName !in PKGS && s.packageName != testPkg) return
         load(ctx)
         val n = s.notification ?: return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
         val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n) ?: return
+        chatPosted(ctx, s, n, style, if (BuildConfig.PLAY) s.packageName + "|" else "", if (BuildConfig.PLAY) "TEST" else "")
+    }
+
+    private fun chatPosted(ctx: Context, s: StatusBarNotification, n: Notification, style: NotificationCompat.MessagingStyle, prefix: String, app: String) {
         val me = style.user.name?.toString()
         val title = (style.conversationTitle ?: n.extras.getCharSequence(Notification.EXTRA_TITLE))?.toString()?.trim().orEmpty()
         if (title.isEmpty()) return
-        val key = (if (android.os.Build.VERSION.SDK_INT >= 26) n.shortcutId else null) ?: title
+        val key = prefix + ((if (android.os.Build.VERSION.SDK_INT >= 26) n.shortcutId else null) ?: title)
         val c = chat(key) ?: Chat(key, title).also { chats.add(0, it) }
+        c.pkg = s.packageName; c.app = app
         // 1:1 chats: the contact's name from their own messages (after you reply, WhatsApp's update can carry
         // your own name, "You", as the title)
         val them = style.messages.lastOrNull { val nm = it.person?.name?.toString(); nm != null && nm != me }?.person?.name?.toString()
@@ -140,12 +194,7 @@ internal object VhsChats {
             if (open != key) c.unread += added
             chats.sortByDescending { it.last }
         }
-        n.actions?.firstOrNull { !it.remoteInputs.isNullOrEmpty() }?.let { reply[key] = it }
-        n.actions?.firstOrNull {
-            (android.os.Build.VERSION.SDK_INT >= 28 && it.semanticAction == Notification.Action.SEMANTIC_ACTION_MARK_AS_READ) ||
-                it.title?.toString()?.lowercase()?.let { t -> "read" in t || "gelezen" in t } == true
-        }?.let { markRead[key] = it }
-        n.contentIntent?.let { tapIntent[key] = it }
+        actions(key, n)
         replyReady++
         save(ctx)
     }
@@ -183,9 +232,10 @@ internal object VhsChats {
             if (runCatching { pi.send(ctx, 0, null, null, null, null, opts.toBundle()) }.onFailure { android.util.Log.w("r95", "chat open", it) }.isSuccess) return
         }
         // the app (found among the installed apps: package visibility hides it from a plain lookup)
-        val app = com.reverender.r95.os.Launcher.apps.firstOrNull { it.component.packageName in PKGS }
+        val pkgs = if (BuildConfig.PLAY) setOfNotNull(chat(key)?.pkg?.takeIf { it.isNotEmpty() } ?: chats.firstOrNull()?.pkg) else PKGS
+        val app = com.reverender.r95.os.Launcher.apps.firstOrNull { it.component.packageName in pkgs }
         if (app != null) { com.reverender.r95.os.Launcher.launch(ctx, app, fullScreen = true); return }
-        val li = PKGS.firstNotNullOfOrNull { ctx.packageManager.getLaunchIntentForPackage(it) } ?: return
+        val li = pkgs.firstNotNullOfOrNull { ctx.packageManager.getLaunchIntentForPackage(it) } ?: return
         runCatching { ctx.startActivity(li.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
@@ -243,7 +293,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
     val chats = VhsChats.chats
     VhsHeader(if (com.reverender.r95.BuildConfig.PLAY) "VHS CHAT" else "WHATSAPP", if (!VhsNotifs.connected) "NO NOTIFS ACCESS" else "${chats.size} CHAT" + if (chats.size == 1) "" else "S")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2.5f)), verticalAlignment = Alignment.CenterVertically) {
-        VhsKey(if (com.reverender.r95.BuildConfig.PLAY) "OPEN CHAT APP" else "OPEN WHATSAPP", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, null) }
+        VhsKey(if (com.reverender.r95.BuildConfig.PLAY) "OPEN LAST APP" else "OPEN WHATSAPP", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, null) }
     }
     Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
         if (!VhsNotifs.connected) {
@@ -273,6 +323,8 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatList(onExit: () -
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     VhsText(vhsSafe(c.name).trim().take(if (c.unread > 0) 16 else 21), invert = c.unread > 0)
                     Spacer(Modifier.weight(1f))
+                    // Play edition: which app it came from
+                    if (BuildConfig.PLAY && c.app.isNotEmpty()) VhsText(vhsSafe(c.app).trim().uppercase().take(if (c.unread > 0) 6 else 8) + if (c.unread > 0) " " else "", color = o.fg.copy(alpha = 0.55f))
                     if (c.unread > 0) VhsText(c.unread.coerceAtMost(99).toString())
                 }
                 c.msgs.lastOrNull()?.let { m ->
@@ -308,7 +360,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ChatView(c: Chat) {
     }
     RegisterKb(VhsKb({ draft }, { draft = it.take(600) }, raw = true) { send() })
     LaunchedEffect(c.msgs.size) { VhsChats.seen(ctx, c.key) }
-    VhsHeader(vhsSafe(c.name).trim().take(20), if (VhsChats.canReply(c.key)) "CHAT  REPLY ON" else "CHAT  READ ONLY")
+    VhsHeader(vhsSafe(c.name).trim().take(20), (if (BuildConfig.PLAY && c.app.isNotEmpty()) vhsSafe(c.app).trim().uppercase().take(10) + "  " else "CHAT  ") + if (VhsChats.canReply(c.key)) "REPLY ON" else "READ ONLY")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(pxDp(2.5f)), verticalAlignment = Alignment.CenterVertically) {
         VhsKey("◀CHATS", boxed = true) { Haptics.tick(); VhsChats.open = null }
         VhsKey("OPEN", boxed = true) { Haptics.tick(); VhsChats.openApp(ctx, c.key) }

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: "tail = only the VHS WEB and LOAD parts"
+        description: "tail = only the VHS WEB and LOAD parts; tour = help-tour screenshots"
         required: false
         default: ""
 
