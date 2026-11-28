@@ -1981,7 +1981,7 @@ private fun VhsSetup(fit: FitState, availH: Float, onEnd: () -> Unit, onChoose: 
         "TOUR  SHOW" to { VhsTour.open = true },
     ) + (if (com.reverender.r95.BuildConfig.PLAY) listOf(
         // Play edition: the open-source licences and where the source code is
-        "LICENSES" to { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://reverender.com/vhs/licenses")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } },
+        "LICENSES" to { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://reverender.com/vhs/licenses")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }; Unit },
     ) else emptyList()) + listOf(
         // the CRT look: set with the SNOW / GLITCH / LINES / CURVE sliders under this row; tapping it switches
         // the first three all off, or back to their defaults
