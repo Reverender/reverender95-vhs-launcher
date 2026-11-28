@@ -1,19 +1,42 @@
-shot 40-web
-video v6-web
-shot 50-load
-shot 51-load-deck
-video v7-load
-pid: 5020
-11-28 02:19:18.550   337   337 D AndroidRuntime: >>>>>> START com.android.internal.os.ZygoteInit uid 0 <<<<<<
-11-28 02:19:18.570   337   337 I AndroidRuntime: Using default boot image
-11-28 02:19:18.570   337   337 I AndroidRuntime: Leaving lock profiling enabled
-11-28 02:19:39.981   966   966 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
-total 12484
-drwxr-xr-x  2 runner runner    4096 Nov 28 02:21 .
-drwxr-xr-x 12 runner runner    4096 Nov 28 02:19 ..
--rw-r--r--  1 runner runner 3525916 Nov 28 02:20 40-web.png
--rw-r--r--  1 runner runner 3254484 Nov 28 02:21 50-load.png
--rw-r--r--  1 runner runner 3157807 Nov 28 02:21 51-load-deck.png
--rw-r--r--  1 runner runner      36 Nov 28 02:19 install.txt
--rw-r--r--  1 runner runner 1526719 Nov 28 02:20 v6-web.mp4
--rw-r--r--  1 runner runner 1298783 Nov 28 02:21 v7-load.mp4
+shot t01-home
+shot t02-drawer
+shot t03-drawer-hold
+shot t04-kb
+shot t05-shade
+shot t06-setup
+shot t07-setup-crt
+shot t08-clock
+shot t09-station
+shot t10-playing
+shot t11-eq
+shot t12-playlist
+shot t13-load
+shot t14-games
+shot t15-music
+shot t16-chat
+shot t17-chat-open
+shot t18-web
+pid: 6838
+11-28 08:44:53.954   967   967 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+total 11528
+drwxr-xr-x  2 runner runner   4096 Nov 28 08:48 .
+drwxr-xr-x 12 runner runner   4096 Nov 28 08:44 ..
+-rw-r--r--  1 runner runner     36 Nov 28 08:45 install.txt
+-rw-r--r--  1 runner runner 798503 Nov 28 08:45 t01-home.png
+-rw-r--r--  1 runner runner 821202 Nov 28 08:45 t02-drawer.png
+-rw-r--r--  1 runner runner 862716 Nov 28 08:45 t03-drawer-hold.png
+-rw-r--r--  1 runner runner 736930 Nov 28 08:46 t04-kb.png
+-rw-r--r--  1 runner runner 121547 Nov 28 08:46 t05-shade.png
+-rw-r--r--  1 runner runner 902325 Nov 28 08:46 t06-setup.png
+-rw-r--r--  1 runner runner 194139 Nov 28 08:46 t07-setup-crt.png
+-rw-r--r--  1 runner runner 839352 Nov 28 08:47 t08-clock.png
+-rw-r--r--  1 runner runner 836161 Nov 28 08:47 t09-station.png
+-rw-r--r--  1 runner runner 832039 Nov 28 08:47 t10-playing.png
+-rw-r--r--  1 runner runner 863540 Nov 28 08:47 t11-eq.png
+-rw-r--r--  1 runner runner 831476 Nov 28 08:47 t12-playlist.png
+-rw-r--r--  1 runner runner 764859 Nov 28 08:48 t13-load.png
+-rw-r--r--  1 runner runner 356375 Nov 28 08:48 t14-games.png
+-rw-r--r--  1 runner runner 399233 Nov 28 08:48 t15-music.png
+-rw-r--r--  1 runner runner 590690 Nov 28 08:48 t16-chat.png
+-rw-r--r--  1 runner runner 665509 Nov 28 08:48 t17-chat-open.png
+-rw-r--r--  1 runner runner 343847 Nov 28 08:48 t18-web.png
