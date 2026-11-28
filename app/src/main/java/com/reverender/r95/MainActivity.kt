@@ -146,6 +146,10 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         intent?.getFloatExtra("r95_vhs_uiblur", -1f)?.takeIf { it >= 0f }?.let { com.reverender.r95.os.OsPrefs.setVhsUiBlur(it) }
         // test hooks: --ei r95_vhs_wall N / --ei r95_vhs_viz N pick the 3D wallpaper / visualizer look
         intent?.getIntExtra("r95_vhs_wall", -2)?.takeIf { it >= -1 }?.let { com.reverender.r95.os.OsPrefs.setVhsWall(it) }
+        // test hooks: --ei r95_vhs_tour 0 (tour done) / 1 (show it); --ei r95_vhs_drawer N (drawer look); --ei r95_vhs_crt N (CRT style)
+        intent?.getIntExtra("r95_vhs_tour", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsTourDone(it == 0); if (it == 0) com.reverender.r95.ui.vhs.VhsTour.open = false }
+        intent?.getIntExtra("r95_vhs_drawer", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsDrawer(it) }
+        intent?.getIntExtra("r95_vhs_crt", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.ui.vhs.vhsApplyCrtStyle(it) }
         intent?.getIntExtra("r95_vhs_viz", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsVizTheme(it) }
         intent?.getIntExtra("r95_vhs_font", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsFont(it) }
         intent?.getIntExtra("r95_vhs_curve", -1)?.takeIf { it >= 0 }?.let { com.reverender.r95.os.OsPrefs.setVhsCurve(it / 100f) }

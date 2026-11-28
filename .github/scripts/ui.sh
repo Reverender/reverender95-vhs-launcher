@@ -8,7 +8,7 @@ SIZE=$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1); W=${SIZE%x*}; H=$
 NPKG=com.reverender.r95.vhs.notif
 adb install -r -g app/build/outputs/apk/vhsnotif/release/*.apk >> "$OUT/install.txt" 2>&1
 timeout 20 adb shell cmd notification allow_listener $NPKG/com.reverender.r95.os.RetroNotificationService
-timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 15
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 >/dev/null; sleep 15
 timeout 20 adb exec-out screencap -p > "$OUT/N0-none.png"
 timeout 20 adb shell cmd notification post -S bigtext -t Hello t1 First_message >/dev/null; sleep 0.8
 timeout 20 adb exec-out screencap -p > "$OUT/N1-flash.png"; sleep 4
@@ -19,7 +19,7 @@ timeout 20 adb shell cmd notification cancel t1 >/dev/null; sleep 2
 timeout 20 adb exec-out screencap -p > "$OUT/N3-after-cancel.png"
 # VHS CHAT: messaging notifications (from the shell, standing in for WhatsApp), the swipe-left target
 timeout 20 adb shell am force-stop $NPKG
-timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --es r95_vhs_chat_test com.android.shell --es r95_vhs_swipe_left vhs:chat --ei r95_vhs_switch_ms 4000 >/dev/null; sleep 12
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_chat_test com.android.shell --es r95_vhs_swipe_left vhs:chat --ei r95_vhs_switch_ms 4000 >/dev/null; sleep 12
 timeout 20 adb shell cmd notification post -S messaging --conversation Mama --message Mama:Hoi_schat --message Mama:Kom_je_zondag_eten chat1 x >/dev/null; sleep 1
 timeout 20 adb shell cmd notification post -S messaging --conversation Band_chat --message Kim:Repetitie_om_acht --message Joe:Ik_neem_de_synth_mee chat2 y >/dev/null; sleep 2
 adb shell input swipe $((W*85/100)) $((H/2)) $((W*15/100)) $((H/2)) 250; sleep 3
@@ -48,18 +48,18 @@ adb shell settings put global animator_duration_scale 0
 # fonts and the VFD DECK visualizer, and the CRT styles' look (one screenshot each)
 for k in 1 2 3 6 7; do
   timeout 20 adb shell am force-stop $NPKG
-  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_font $k --ei r95_vhs_viz 6 >/dev/null; sleep 6
+  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_font $k --ei r95_vhs_viz 6 >/dev/null; sleep 6
   timeout 20 adb exec-out screencap -p > "$OUT/F$k-font.png"
 done
-timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_font 0 >/dev/null; sleep 2
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_font 0 >/dev/null; sleep 2
 for wi in 3 4 5; do
   timeout 20 adb shell am force-stop $NPKG
-  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi >/dev/null; sleep 7
+  timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_wall $wi >/dev/null; sleep 7
   timeout 20 adb exec-out screencap -p > "$OUT/NW$wi-wall.png"
 done
 # VHS WEB via swipe right, then back home (everything wiped)
 timeout 20 adb shell am force-stop $NPKG
-timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --es r95_vhs_swipe_right vhs:web >/dev/null; sleep 6
+timeout 20 adb shell am start -n "$NPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_swipe_right vhs:web >/dev/null; sleep 6
 adb shell input swipe $((W*15/100)) $((H/2)) $((W*85/100)) $((H/2)) 250; sleep 9
 timeout 20 adb exec-out screencap -p > "$OUT/WEB1.png"
 adb shell input keyevent KEYCODE_BACK; sleep 3
@@ -71,13 +71,13 @@ timeout 20 adb shell am force-stop $NPKG; timeout 20 adb uninstall $NPKG >/dev/n
 VHS_WALL_Y=${VHS_WALL_Y:-433}; VHS_DECKSW_Y=${VHS_DECKSW_Y:-108}
 VPKG=com.reverender.r95.vhs
 adb install -r -g app/build/outputs/apk/vhs/release/*.apk >> "$OUT/install.txt" 2>&1
-adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" > /dev/null; sleep 15
+adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 > /dev/null; sleep 15
 # ---- lifecycle check: the visualizer and the CRT must keep running after another app and after lock / unlock
 adb logcat -c
 adb exec-out screencap -p > "$OUT/L1-start.png"; sleep 1
 adb exec-out screencap -p > "$OUT/L1b-start.png"
 timeout 20 adb shell am start -a android.settings.SETTINGS >/dev/null; sleep 4
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 5
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 >/dev/null; sleep 5
 adb exec-out screencap -p > "$OUT/L2-after-app.png"; sleep 1
 adb exec-out screencap -p > "$OUT/L2b-after-app.png"
 timeout 10 adb shell input keyevent KEYCODE_SLEEP; sleep 6
@@ -89,11 +89,11 @@ timeout 10 adb shell input keyevent KEYCODE_WAKEUP; sleep 1; timeout 10 adb shel
 adb exec-out screencap -p > "$OUT/L4-after-long-lock.png"
 for wi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG
-  timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall $wi --ei r95_vhs_viz $((wi % 9)) --ei r95_vhs_font $((wi % 7)) --ef r95_vhs_uiblur $([ $wi = 3 ] && echo 0.8 || echo 0) >/dev/null; sleep 6
+  timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_wall $wi --ei r95_vhs_viz $((wi % 9)) --ei r95_vhs_font $((wi % 7)) --ef r95_vhs_uiblur $([ $wi = 3 ] && echo 0.8 || echo 0) >/dev/null; sleep 6
   adb exec-out screencap -p > "$OUT/W$wi-wall.png"
 done
 # taps on the right side must stay in the launcher; holding the clock opens the clock app
-timeout 20 adb shell am force-stop $VPKG; timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 6
+timeout 20 adb shell am force-stop $VPKG; timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 >/dev/null; sleep 6
 timeout 10 adb shell input tap $((W*90/100)) $((H*30/100)); sleep 2
 echo "after right tap: $(timeout 10 adb shell dumpsys window | grep -m1 mCurrentFocus)"
 timeout 10 adb shell input swipe $((W*78/100)) $((H*55/100)) $((W*78/100)) $((H*55/100)) 900; sleep 3
@@ -144,7 +144,7 @@ adb shell mkdir -p /sdcard/Android/data/$VPKG/files
 adb push /tmp/test.nes /sdcard/Android/data/$VPKG/files/test.nes > /dev/null
 adb logcat -c
 adb shell am force-stop $VPKG; sleep 1
-adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_rom test.nes > /dev/null; sleep 45
+adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_rom test.nes > /dev/null; sleep 45
 adb exec-out screencap -p > "$OUT/8-vhsonly-game.png"
 echo "game pid: $(adb shell pidof $VPKG)"
 # back (to the cartridge search) and EJECT must not crash
@@ -199,7 +199,7 @@ timeout 25 adb shell input swipe $((W*30/100)) $((H*30/100)) $((W*30/100)) $((H*
 timeout 25 adb exec-out screencap -p > "$OUT/13b-vhs-eq-drag.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 1.5
 # setup: THEME twice
-timeout 25 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" >/dev/null; sleep 3
+timeout 25 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 >/dev/null; sleep 3
 timeout 25 adb shell input tap $((W/2)) $((H-22)); sleep 1.5
 timeout 25 adb exec-out screencap -p > "$OUT/14a-setup.png"
 timeout 25 adb shell input tap $((W*40/100)) $((H*12/100)); sleep 1
@@ -210,20 +210,20 @@ timeout 25 adb exec-out screencap -p > "$OUT/14b-vhs-theme.png"
 timeout 25 adb shell input keyevent KEYCODE_BACK; sleep 2
 # empty titles: no title bars on the home screen
 timeout 20 adb shell am force-stop $VPKG
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "~" >/dev/null; sleep 5
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_titles "~" >/dev/null; sleep 5
 timeout 25 adb exec-out screencap -p > "$OUT/T0-no-titles.png"
 timeout 20 adb shell am force-stop $VPKG
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "MY_VCR~" >/dev/null; sleep 5
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_titles "MY_VCR~" >/dev/null; sleep 5
 timeout 25 adb exec-out screencap -p > "$OUT/T1-one-title.png"
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --es r95_vhs_titles "VHS/VCR_MENU~REVERENDER_95" >/dev/null; sleep 2
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --es r95_vhs_titles "VHS/VCR_MENU~REVERENDER_95" >/dev/null; sleep 2
 # vaporwave colours: each multicolour background, the last with PASTEL MIX text
 for gi in 0 1 2 3 4 5; do
   timeout 20 adb shell am force-stop $VPKG
-  timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_wall -1 --ei r95_vhs_grad $gi --ez r95_vhs_mix $([ $gi = 2 ] && echo true || echo false) >/dev/null; sleep 5
+  timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_wall -1 --ei r95_vhs_grad $gi --ez r95_vhs_mix $([ $gi = 2 ] && echo true || echo false) >/dev/null; sleep 5
   timeout 25 adb exec-out screencap -p > "$OUT/G$gi-grad.png"
 done
 timeout 20 adb shell am force-stop $VPKG
-timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_grad -1 --ez r95_vhs_mix false >/dev/null; sleep 4
+timeout 20 adb shell am start -n "$VPKG/com.reverender.r95.MainActivity" --ei r95_vhs_tour 0 --ei r95_vhs_grad -1 --ez r95_vhs_mix false >/dev/null; sleep 4
 echo "eq/theme pid: $(adb shell pidof $VPKG)"
 # visualizer: music, then ■ STOP -> the standby shows must run
 timeout 25 adb shell input tap $((W/2)) $((H*97/100)); sleep 1.5   # setup -> END back to the menu

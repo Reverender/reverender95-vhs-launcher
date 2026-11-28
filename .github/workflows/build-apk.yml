@@ -45,7 +45,7 @@ jobs:
           set -e
           for abi in arm64-v8a armeabi-v7a x86_64; do
             d=app/src/play/jniLibs/$abi; mkdir -p "$d"
-            for c in fceumm snes9x gambatte mgba mupen64plus_next_gles3; do
+            for c in fceumm bsnes gambatte mgba mupen64plus_next_gles3; do
               curl -fsSL --retry 3 -o /tmp/$c-$abi.zip "https://buildbot.libretro.com/nightly/android/latest/$abi/${c}_libretro_android.so.zip" || { echo "skip $c $abi"; continue; }
               unzip -o -q /tmp/$c-$abi.zip -d /tmp/core-$abi || true
               [ -f /tmp/core-$abi/${c}_libretro_android.so ] && mv /tmp/core-$abi/${c}_libretro_android.so "$d/lib${c}_libretro_android.so"

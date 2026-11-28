@@ -165,7 +165,7 @@ internal fun VhsGame(onExit: () -> Unit, onSwitch: (String) -> Unit = {}) {
     fun leave(f: () -> Unit) { if (game == null) f() else shutDown(f) }
     // the pad drives the running core through EmuTouch (as on the desktop)
     androidx.compose.runtime.LaunchedEffect(game) {
-        EmuTouch.core = game?.let { when (it.system.core) { "fceumm" -> "fceumm"; "snes9x" -> "snes9x"; "gambatte" -> "gambatte"; "mgba" -> "mgba"; else -> "n64" } }
+        EmuTouch.core = game?.let { when (it.system.core) { "fceumm" -> "fceumm"; "snes9x", "bsnes" -> "snes9x"; "gambatte" -> "gambatte"; "mgba" -> "mgba"; else -> "n64" } }
     }
     DisposableEffect(Unit) { onDispose { job?.cancel(); EmuTouch.core = null; EmuTouch.view = null } }
     // BACK on the game: to the cartridge search (the game keeps its place, paused). BACK there: stop and leave.

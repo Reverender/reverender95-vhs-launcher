@@ -83,7 +83,8 @@ internal data class EmuSystem(val label: String, val badge: String, val core: St
 
 internal fun systemFor(ext: String): EmuSystem? = when (ext.lowercase()) {
     "nes" -> EmuSystem("NINTENDO ENTERTAINMENT SYSTEM (NES)", "FCEUMM // NES", "fceumm")
-    "smc", "sfc", "fig", "swc", "gd3", "gd7", "dx2", "bsx", "snes" -> EmuSystem("SUPER NINTENDO ENTERTAINMENT SYSTEM (SNES)", "SNES9X // SNES", "snes9x")
+    "smc", "sfc", "fig", "swc", "gd3", "gd7", "dx2", "bsx", "snes" -> if (com.reverender.r95.BuildConfig.PLAY) EmuSystem("SUPER NINTENDO ENTERTAINMENT SYSTEM (SNES)", "BSNES // SNES", "bsnes") // Play: a GPL core (snes9x forbids commercial use)
+            else EmuSystem("SUPER NINTENDO ENTERTAINMENT SYSTEM (SNES)", "SNES9X // SNES", "snes9x")
     "gb" -> EmuSystem("NINTENDO GAME BOY (GB)", "GAMBATTE // GB", "gambatte")
     "gbc" -> EmuSystem("NINTENDO GAME BOY COLOR (GBC)", "GAMBATTE // GBC", "gambatte")
     "gba" -> EmuSystem("NINTENDO GAME BOY ADVANCE (GBA)", "MGBA // GBA", "mgba")
@@ -206,7 +207,7 @@ fun EmulatorApp(wm: com.reverender.r95.ui.desktop.WindowManager? = null) {
     // ge(): the touch pad follows the running core and opens itself on touch devices (le())
     androidx.compose.runtime.LaunchedEffect(game) {
         val g = game
-        EmuTouch.core = g?.let { when (it.system.core) { "fceumm" -> "fceumm"; "snes9x" -> "snes9x"; "gambatte" -> "gambatte"; "mgba" -> "mgba"; else -> "n64" } }
+        EmuTouch.core = g?.let { when (it.system.core) { "fceumm" -> "fceumm"; "snes9x", "bsnes" -> "snes9x"; "gambatte" -> "gambatte"; "mgba" -> "mgba"; else -> "n64" } }
         if (g != null) wm?.openEmuTouch() else wm?.closeEmuTouch()
     }
     DisposableEffect(Unit) { onDispose { EmuTouch.core = null; EmuTouch.view = null; wm?.windows?.firstOrNull { it.app.id == "emutouch" }?.let { wm.close(it) } } }
