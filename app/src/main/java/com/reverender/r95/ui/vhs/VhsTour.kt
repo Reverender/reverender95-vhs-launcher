@@ -196,7 +196,7 @@ internal fun VhsTourHost() {
     val p = pages[page.coerceIn(0, pages.lastIndex)]
     Box(Modifier.fillMaxSize().background(o.bg).pointerInput(Unit) { detectTapGestures { } }) {
         // (the bottom row sits well clear of the CRT's curved corners, and the keys are big enough for a thumb)
-        Column(Modifier.fillMaxSize().padding(start = pxDp(3f), end = pxDp(3f), top = pxDp(3f), bottom = pxDp(9f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
+        Column(Modifier.fillMaxSize().padding(start = pxDp(3f), end = pxDp(3f), top = pxDp(3f), bottom = pxDp(4f)), verticalArrangement = Arrangement.spacedBy(pxDp(1.6f))) {
             VhsHeader("HELP TOUR", "%02d/%02d".format(page + 1, pages.size))
             Box(Modifier.fillMaxWidth().background(o.fg).padding(pxDp(1f))) { VhsText(p.title, invert = true) }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
@@ -207,8 +207,9 @@ internal fun VhsTourHost() {
             }
             if (hint) VhsText("HOLD SKIP TO SKIP", color = o.fg.copy(alpha = 0.7f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                // SKIP: hold it down
-                Box(Modifier.border(pxDp(0.5f), o.fg).pointerInput(Unit) {
+                // SKIP: hold it down. (The touch area reaches well above and below the key: the CRT's curve draws the
+                // bottom row a little higher than where it sits.)
+                Box(Modifier.pointerInput(Unit) {
                     awaitEachGesture {
                         awaitFirstDown(); holding = true; Haptics.tick()
                         val start = System.currentTimeMillis()
@@ -216,14 +217,18 @@ internal fun VhsTourHost() {
                         holding = false
                         if (System.currentTimeMillis() - start < 1400) hint = true
                     }
-                }) {
-                    Box(Modifier.matchParentSize()) { Box(Modifier.fillMaxHeight().fillMaxWidth(hold).background(o.fg.copy(alpha = 0.45f))) }
-                    Box(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(3f))) { VhsText(if (holding) "SKIPPING…" else "HOLD SKIP") }
+                }.padding(vertical = pxDp(6f))) {
+                    Box(Modifier.border(pxDp(0.5f), o.fg)) {
+                        Box(Modifier.matchParentSize()) { Box(Modifier.fillMaxHeight().fillMaxWidth(hold).background(o.fg.copy(alpha = 0.45f))) }
+                        Box(Modifier.padding(horizontal = pxDp(2f), vertical = pxDp(3f))) { VhsText(if (holding) "SKIPPING…" else "HOLD SKIP") }
+                    }
                 }
+                fun back() { Haptics.tick(); page-- }
+                fun next() { Haptics.tick(); if (page == pages.lastIndex) done() else page++ }
                 Row(horizontalArrangement = Arrangement.spacedBy(pxDp(3f))) {
-                    if (page > 0) VhsKey("◀BACK", boxed = true, scale = 1.3f) { Haptics.tick(); page-- }
-                    VhsKey(if (page == pages.lastIndex) "START" else "NEXT▶", boxed = true, selected = true, scale = 1.3f) {
-                        Haptics.tick(); if (page == pages.lastIndex) done() else page++
+                    if (page > 0) Box(Modifier.pointerInput(page) { detectTapGestures { back() } }.padding(vertical = pxDp(6f))) { VhsKey("◀BACK", boxed = true, scale = 1.3f) { back() } }
+                    Box(Modifier.pointerInput(page) { detectTapGestures { next() } }.padding(vertical = pxDp(6f))) {
+                        VhsKey(if (page == pages.lastIndex) "START" else "NEXT▶", boxed = true, selected = true, scale = 1.3f) { next() }
                     }
                 }
             }
